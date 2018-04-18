@@ -8996,6 +8996,25 @@ wma_chan_info_event_handler(void *handle, u_int8_t *event_buf,
 	return 0;
 }
 
+static int
+wma_rx_pkgid_event_handler(WMA_HANDLE handle, u_int8_t *data, u_int32_t len)
+{
+	tp_wma_handle wma_handle = (tp_wma_handle)handle;
+	WMI_PKGID_EVENTID_param_tlvs *param_buf = NULL;
+	wmi_pkgid_event_fixed_param *wmi_event = NULL;
+
+	if (NULL == wma_handle) {
+		WMA_LOGE("%s: wma_handle ins NULL", __func__);
+		return VOS_STATUS_E_INVAL;
+	}
+	param_buf = (WMI_PKGID_EVENTID_param_tlvs *)data;
+	wmi_event = param_buf->fixed_param;
+	wma_handle->pkgid_value = wmi_event->value;
+	vos_event_set(&wma_handle->pkgid_event);
+
+	return VOS_STATUS_SUCCESS;
+}
+
 static void
 wma_register_extscan_event_handler(tp_wma_handle wma_handle)
 {
@@ -9673,6 +9692,12 @@ VOS_STATUS WDA_open(v_VOID_t *vos_context, v_VOID_t *os_ctx,
 		goto err_event_init;
 	}
 
+	vos_status = vos_event_init(&wma_handle->pkgid_event);
+	if (vos_status != VOS_STATUS_SUCCESS) {
+		WMA_LOGP("%s: pkgid_event initialization failed", __func__);
+		goto err_event_init;
+	}
+
 	INIT_LIST_HEAD(&wma_handle->vdev_resp_queue);
 	adf_os_spinlock_init(&wma_handle->vdev_respq_lock);
 	adf_os_spinlock_init(&wma_handle->vdev_detach_lock);
@@ -9870,9 +9895,13 @@ VOS_STATUS WDA_open(v_VOID_t *vos_context, v_VOID_t *os_ctx,
 		WMI_PDEV_CHIP_POWER_SAVE_FAILURE_DETECTED_EVENTID,
 		wma_chip_power_save_failure_detected_handler);
 
-     wmi_unified_register_event_handler(wma_handle->wmi_handle,
-                WMI_COEX_REPORT_ANTENNA_ISOLATION_EVENTID,
-                wma_antenna_isolation_event_handler);
+	wmi_unified_register_event_handler(wma_handle->wmi_handle,
+		WMI_COEX_REPORT_ANTENNA_ISOLATION_EVENTID,
+		wma_antenna_isolation_event_handler);
+
+	wmi_unified_register_event_handler(wma_handle->wmi_handle,
+		WMI_PKGID_EVENTID,
+		wma_rx_pkgid_event_handler);
 
 	wma_register_debug_callback();
 	wma_ndp_register_all_event_handlers(wma_handle);
@@ -37881,6 +37910,7 @@ VOS_STATUS wma_close(v_VOID_t *vos_ctx)
 	vos_event_destroy(&wma_handle->wow_tx_complete);
 	vos_event_destroy(&wma_handle->runtime_suspend);
 	vos_event_destroy(&wma_handle->recovery_event);
+	vos_event_destroy(&wma_handle->pkgid_event);
 
 	/* Destroy Tx Frame Complete event */
 	vos_event_destroy(&wma_handle->tx_frm_download_comp_event);
@@ -39418,6 +39448,30 @@ VOS_STATUS wma_wait_for_ready_event(WMA_HANDLE handle)
 		vos_status = VOS_STATUS_E_FAILURE;
 	}
 	return vos_status;
+}
+
+VOS_STATUS wma_wait_for_pkgid_event(WMA_HANDLE handle, bool *isAuto)
+{
+	tp_wma_handle wma_handle = (tp_wma_handle) handle;
+	VOS_STATUS vos_status;
+
+	if ((NULL == wma_handle) || (NULL == isAuto)) {
+		WMA_LOGE("%s: Invalid arguments", __func__);
+		return VOS_STATUS_E_FAILURE;
+	}
+
+	*isAuto = FALSE;
+	/* wait until WMI_PKGID_EVENTID received from FW */
+	vos_status = vos_wait_single_event( &(wma_handle->pkgid_event), 200 );
+	if (!VOS_IS_STATUS_SUCCESS(vos_status)) {
+		WMA_LOGE("%s: Timeout waiting for pkgid event from FW", __func__);
+		return VOS_STATUS_E_FAILURE;
+	}
+
+	if (wma_handle->pkgid_value & WMI_PKGID_MASK_AUTO)
+		*isAuto = TRUE;
+
+	return VOS_STATUS_SUCCESS;
 }
 
 int wma_suspend_target(WMA_HANDLE handle, int disable_target_intr)

@@ -4632,6 +4632,10 @@ VOS_STATUS sme_configure_pta_coex(uint8_t coex_pta_config_enable, uint32_t coex_
 
 uint8_t    sme_is_any_session_in_connected_state(tHalHandle h_hal);
 
+typedef void (*tSmePkgidIndCallback)(void *pContext, u_int8_t auto_chip);
+void sme_register_pkgid_ind_callback(tHalHandle hHal,
+                   tSmePkgidIndCallback callback);
+
 typedef void ( *tSmeSetThermalLevelCallback)(void *pContext, u_int8_t level);
 void sme_add_set_thermal_level_callback(tHalHandle hHal,
                    tSmeSetThermalLevelCallback callback);

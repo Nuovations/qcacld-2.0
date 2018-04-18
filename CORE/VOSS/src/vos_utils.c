@@ -101,7 +101,7 @@
    Function Definitions and Documentation
  * -------------------------------------------------------------------------*/
 #ifndef CONFIG_CNSS
-#if defined(WLAN_FEATURE_11W) && (defined(HIF_USB) || defined(HIF_SDIO) || defined(CONFIG_NON_QC_PLATFORM_PCI))
+#if defined(WLAN_FEATURE_11W) && (defined(HIF_USB) || defined(HIF_SDIO) || defined(CONFIG_NON_QC_PLATFORM_PCI) || defined(HIF_PCI))
 #define CMAC_TLEN 8 /* CMAC TLen = 64 bits (8 octets) */
 
 static inline void xor_128(const u8 *a, const u8 *b, u8 *out)
@@ -403,7 +403,7 @@ vos_attach_mmie(v_U8_t *igtk, v_U8_t *ipn, u_int16_t key_id,
     /*
      * Calculate MIC and then copy
      */
-#if  !defined(CONFIG_CNSS) && (defined(HIF_USB) || defined(HIF_SDIO) || defined(CONFIG_NON_QC_PLATFORM_PCI))
+#if  !defined(CONFIG_CNSS) && (defined(HIF_USB) || defined(HIF_SDIO) || defined(CONFIG_NON_QC_PLATFORM_PCI) || defined(HIF_PCI))
     tfm = crypto_alloc_cipher( "aes", 0, CRYPTO_ALG_ASYNC);
 #else
     tfm = wcnss_wlan_crypto_alloc_cipher( "aes", 0, CRYPTO_ALG_ASYNC);
@@ -459,7 +459,7 @@ vos_attach_mmie(v_U8_t *igtk, v_U8_t *ipn, u_int16_t key_id,
                 (v_U8_t*)(efrm-(frmLen-sizeof(struct ieee80211_frame))),
                 nBytes - AAD_LEN - CMAC_TLEN);
 
-#if  !defined(CONFIG_CNSS) && (defined(HIF_USB) || defined(HIF_SDIO) || defined(CONFIG_NON_QC_PLATFORM_PCI))
+#if  !defined(CONFIG_CNSS) && (defined(HIF_USB) || defined(HIF_SDIO) || defined(CONFIG_NON_QC_PLATFORM_PCI) || defined(HIF_PCI))
     cmac_calc_mic(tfm, input, nBytes, mic);
 #else
     wcnss_wlan_cmac_calc_mic(tfm, input, nBytes, mic);
@@ -480,7 +480,7 @@ err_tfm:
     }
 
     if (tfm)
-#if  !defined(CONFIG_CNSS) && (defined(HIF_USB) || defined(HIF_SDIO) || defined(CONFIG_NON_QC_PLATFORM_PCI))
+#if  !defined(CONFIG_CNSS) && (defined(HIF_USB) || defined(HIF_SDIO) || defined(CONFIG_NON_QC_PLATFORM_PCI) || defined(HIF_PCI))
        crypto_free_cipher(tfm);
 #else
        wcnss_wlan_crypto_free_cipher(tfm);
@@ -529,7 +529,7 @@ v_BOOL_t vos_is_mmie_valid(v_U8_t *igtk, v_U8_t *ipn,
         return VOS_FALSE;
     }
 
-#if  !defined(CONFIG_CNSS) && (defined(HIF_USB) || defined(HIF_SDIO) || defined(CONFIG_NON_QC_PLATFORM_PCI))
+#if  !defined(CONFIG_CNSS) && (defined(HIF_USB) || defined(HIF_SDIO) || defined(CONFIG_NON_QC_PLATFORM_PCI) || defined(HIF_PCI))
     tfm = crypto_alloc_cipher( "aes", 0, CRYPTO_ALG_ASYNC);
 #else
     tfm = wcnss_wlan_crypto_alloc_cipher( "aes", 0, CRYPTO_ALG_ASYNC);
@@ -578,7 +578,7 @@ v_BOOL_t vos_is_mmie_valid(v_U8_t *igtk, v_U8_t *ipn,
     vos_mem_copy(input, aad, AAD_LEN);
     vos_mem_copy(input+AAD_LEN, (v_U8_t*)(wh+1), nBytes - AAD_LEN - CMAC_TLEN);
 
-#if  !defined(CONFIG_CNSS) && (defined(HIF_USB) || defined(HIF_SDIO) || defined(CONFIG_NON_QC_PLATFORM_PCI))
+#if  !defined(CONFIG_CNSS) && (defined(HIF_USB) || defined(HIF_SDIO) || defined(CONFIG_NON_QC_PLATFORM_PCI) || defined(HIF_PCI))
     cmac_calc_mic(tfm, input, nBytes, mic);
 #else
     wcnss_wlan_cmac_calc_mic(tfm, input, nBytes, mic);
@@ -608,7 +608,7 @@ v_BOOL_t vos_is_mmie_valid(v_U8_t *igtk, v_U8_t *ipn,
 
 err_tfm:
     if (tfm)
-#if  !defined(CONFIG_CNSS) && (defined(HIF_USB) || defined(HIF_SDIO) || defined(CONFIG_NON_QC_PLATFORM_PCI))
+#if  !defined(CONFIG_CNSS) && (defined(HIF_USB) || defined(HIF_SDIO) || defined(CONFIG_NON_QC_PLATFORM_PCI) || defined(HIF_PCI))
         crypto_free_cipher(tfm);
 #else
         wcnss_wlan_crypto_free_cipher(tfm);

@@ -116,8 +116,6 @@ static struct ol_fw_files FW_FILES_DEFAULT = {
 	PREFIX "utfbd.bin", PREFIX "qsetup.bin",
 	PREFIX "epping.bin"};
 
-static A_STATUS ol_sdio_extra_initialization(struct ol_softc *scn);
-
 static int ol_get_fw_files_for_target(struct ol_fw_files *pfw_files,
                                  u32 target_version)
 {
@@ -1211,12 +1209,12 @@ static void ramdump_work_handler(struct work_struct *ramdump)
 	ol_fw_axi_addr = (void *)(byte_ptr + DRAM_SIZE);
 	ol_fw_iram_addr = (void *)(byte_ptr + DRAM_SIZE + AXI_SIZE);
 
-	pr_err("%s: DRAM => mem = %pK, len = %d\n", __func__,
-				ol_fw_dram_addr, DRAM_SIZE);
-	pr_err("%s: AXI  => mem = %pK, len = %d\n", __func__,
-				ol_fw_axi_addr, AXI_SIZE);
-	pr_err("%s: IRAM => mem = %pK, len = %d\n", __func__,
-				ol_fw_iram_addr, IRAM_SIZE);
+	pr_err("%s: DRAM => mem = %#08llx, len = %d\n", __func__,
+			(u_int64_t)ol_fw_dram_addr, DRAM_SIZE);
+	pr_err("%s: AXI  => mem = %#08llx, len = %d\n", __func__,
+			(u_int64_t)ol_fw_axi_addr, AXI_SIZE);
+	pr_err("%s: IRAM => mem = %#08llx, len = %d\n", __func__,
+			(u_int64_t)ol_fw_iram_addr, IRAM_SIZE);
 #endif
 #endif
 
@@ -2215,6 +2213,142 @@ void ol_transfer_codeswap_struct(struct ol_softc *scn) {
 }
 #endif
 #endif
+#ifdef HIF_SDIO
+
+/*Setting SDIO block size, mbox ISR yield limit for SDIO based HIF*/
+static A_STATUS
+ol_sdio_extra_initialization(struct ol_softc *scn)
+{
+
+	A_STATUS status;
+	u_int32_t param;
+#ifdef CONFIG_DISABLE_SLEEP_BMI_OPTION
+	uint32 value;
+#endif
+
+	do{
+		A_UINT32 blocksizes[HTC_MAILBOX_NUM_MAX];
+		unsigned int MboxIsrYieldValue = 99;
+		A_UINT32 TargetType = TARGET_TYPE_AR6320;
+		/* get the block sizes */
+		status = HIFConfigureDevice(scn->hif_hdl, HIF_DEVICE_GET_MBOX_BLOCK_SIZE,
+									blocksizes, sizeof(blocksizes));
+
+		if (A_FAILED(status)) {
+			printk("Failed to get block size info from HIF layer...\n");
+			break;
+		}
+			/* note: we actually get the block size for mailbox 1, for SDIO the block
+						size on mailbox 0 is artificially set to 1 must be a power of 2 */
+		A_ASSERT((blocksizes[1] & (blocksizes[1] - 1)) == 0);
+
+		/* set the host interest area for the block size */
+		status = BMIWriteMemory(scn->hif_hdl,
+					HOST_INTEREST_ITEM_ADDRESS(TargetType, hi_mbox_io_block_sz),
+					(A_UCHAR *)&blocksizes[1],
+					4,
+					scn);
+
+		if (A_FAILED(status)) {
+			printk("BMIWriteMemory for IO block size failed \n");
+			break;
+		}
+
+		if (MboxIsrYieldValue != 0) {
+				/* set the host interest area for the mbox ISR yield limit */
+			status = BMIWriteMemory(scn->hif_hdl,
+						HOST_INTEREST_ITEM_ADDRESS(TargetType,
+						hi_mbox_isr_yield_limit),
+						(A_UCHAR *)&MboxIsrYieldValue,
+						4,
+						scn);
+
+			if (A_FAILED(status)) {
+				printk("BMIWriteMemory for yield limit failed \n");
+				break;
+			}
+		}
+
+#ifdef CONFIG_DISABLE_SLEEP_BMI_OPTION
+
+		printk("%s: prevent ROME from sleeping\n",__func__);
+		BMIReadSOCRegister(scn->hif_hdl,
+			MBOX_BASE_ADDRESS + LOCAL_SCRATCH_OFFSET,
+			/* this address should be 0x80C0 for ROME*/
+			&value,
+			scn);
+
+		value |= SOC_OPTION_SLEEP_DISABLE;
+
+		BMIWriteSOCRegister(scn->hif_hdl,
+			MBOX_BASE_ADDRESS + LOCAL_SCRATCH_OFFSET,
+			value,
+			scn);
+#endif
+		status = BMIReadMemory(scn->hif_hdl,
+				HOST_INTEREST_ITEM_ADDRESS(scn->target_type,
+				hi_acs_flags),
+				(u_int8_t *)&param,
+				4,
+				scn);
+		if (A_FAILED(status)) {
+			printk("BMIReadMemory for hi_acs_flags failed \n");
+			break;
+		}
+
+		param |= (HI_ACS_FLAGS_SDIO_SWAP_MAILBOX_SET |
+			HI_ACS_FLAGS_ALT_DATA_CREDIT_SIZE);
+
+		if (!vos_is_ptp_tx_opt_enabled() &&
+		    !vos_is_ocb_tx_per_pkt_stats_enabled())
+			param |= HI_ACS_FLAGS_SDIO_REDUCE_TX_COMPL_SET;
+
+		/* enable TX completion to collect tx_desc for pktlog */
+		if (vos_is_packet_log_enabled())
+			param &= ~HI_ACS_FLAGS_SDIO_REDUCE_TX_COMPL_SET;
+
+		BMIWriteMemory(scn->hif_hdl,
+				host_interest_item_address(scn->target_type,
+				offsetof(struct host_interest_s,
+					hi_acs_flags)),
+				(u_int8_t *)&param, 4, scn);
+
+	}while(FALSE);
+
+	return status;
+}
+
+void
+ol_target_ready(struct ol_softc *scn, void *cfg_ctx)
+{
+	u_int32_t value = 0;
+	A_STATUS status = EOK;
+
+	status = HIFDiagReadMem(scn->hif_hdl,
+		host_interest_item_address(scn->target_type,
+		offsetof(struct host_interest_s, hi_acs_flags)),
+		(A_UCHAR *)&value, sizeof(u_int32_t));
+
+	if (status != EOK) {
+		printk("%s: HIFDiagReadMem failed:%d\n", __func__, status);
+		return;
+	}
+
+	if (value & HI_ACS_FLAGS_SDIO_SWAP_MAILBOX_FW_ACK) {
+		printk("MAILBOX SWAP Service is enabled!\n");
+		HIFSetMailboxSwap(scn->hif_hdl);
+	}
+
+	if (value & HI_ACS_FLAGS_SDIO_REDUCE_TX_COMPL_FW_ACK) {
+		printk("Reduced Tx Complete service is enabled!\n");
+		ol_cfg_set_tx_free_at_download(cfg_ctx);
+
+	}
+#ifdef HIF_MBOX_SLEEP_WAR
+	HIFSetMboxSleep(scn->hif_hdl, true, true, true);
+#endif
+}
+#endif
 
 #ifdef FEATURE_USB_WARM_RESET
 static inline int ol_download_usb_warm_reset_firmeware(struct ol_softc *scn)
@@ -2274,7 +2408,7 @@ int ol_download_firmware(struct ol_softc *scn)
 			printk("%s: No FW files from CNSS driver\n", __func__);
 			return -1;
 		}
-#elif defined(HIF_SDIO)
+#elif defined(HIF_SDIO) || defined(HIF_PCI)
        if (0 != ol_get_fw_files_for_target(&scn->fw_files,
                                               scn->target_version)) {
                 printk("%s: No FW files from driver\n", __func__);
@@ -2846,6 +2980,7 @@ static int ol_dump_fail_debug_info(struct ol_softc *scn, void *ptr)
 	return 0;
 }
 #endif
+//#endif
 
 /**---------------------------------------------------------------------------
  *   \brief  ol_target_coredump
@@ -3029,142 +3164,7 @@ u_int8_t ol_get_number_of_peers_supported(struct ol_softc *scn)
 	return max_no_of_peers;
 }
 
-#ifdef HIF_SDIO
 
-/*Setting SDIO block size, mbox ISR yield limit for SDIO based HIF*/
-static A_STATUS
-ol_sdio_extra_initialization(struct ol_softc *scn)
-{
-
-	A_STATUS status;
-	u_int32_t param;
-#ifdef CONFIG_DISABLE_SLEEP_BMI_OPTION
-	uint32 value;
-#endif
-
-	do{
-		A_UINT32 blocksizes[HTC_MAILBOX_NUM_MAX];
-		unsigned int MboxIsrYieldValue = 99;
-		A_UINT32 TargetType = TARGET_TYPE_AR6320;
-		/* get the block sizes */
-		status = HIFConfigureDevice(scn->hif_hdl, HIF_DEVICE_GET_MBOX_BLOCK_SIZE,
-									blocksizes, sizeof(blocksizes));
-
-		if (A_FAILED(status)) {
-			printk("Failed to get block size info from HIF layer...\n");
-			break;
-		}
-			/* note: we actually get the block size for mailbox 1, for SDIO the block
-						size on mailbox 0 is artificially set to 1 must be a power of 2 */
-		A_ASSERT((blocksizes[1] & (blocksizes[1] - 1)) == 0);
-
-		/* set the host interest area for the block size */
-		status = BMIWriteMemory(scn->hif_hdl,
-					HOST_INTEREST_ITEM_ADDRESS(TargetType, hi_mbox_io_block_sz),
-					(A_UCHAR *)&blocksizes[1],
-					4,
-					scn);
-
-		if (A_FAILED(status)) {
-			printk("BMIWriteMemory for IO block size failed \n");
-			break;
-		}
-
-		if (MboxIsrYieldValue != 0) {
-				/* set the host interest area for the mbox ISR yield limit */
-			status = BMIWriteMemory(scn->hif_hdl,
-						HOST_INTEREST_ITEM_ADDRESS(TargetType,
-						hi_mbox_isr_yield_limit),
-						(A_UCHAR *)&MboxIsrYieldValue,
-						4,
-						scn);
-
-			if (A_FAILED(status)) {
-				printk("BMIWriteMemory for yield limit failed \n");
-				break;
-			}
-		}
-
-#ifdef CONFIG_DISABLE_SLEEP_BMI_OPTION
-
-		printk("%s: prevent ROME from sleeping\n",__func__);
-		BMIReadSOCRegister(scn->hif_hdl,
-			MBOX_BASE_ADDRESS + LOCAL_SCRATCH_OFFSET,
-			/* this address should be 0x80C0 for ROME*/
-			&value,
-			scn);
-
-		value |= SOC_OPTION_SLEEP_DISABLE;
-
-		BMIWriteSOCRegister(scn->hif_hdl,
-			MBOX_BASE_ADDRESS + LOCAL_SCRATCH_OFFSET,
-			value,
-			scn);
-#endif
-		status = BMIReadMemory(scn->hif_hdl,
-				HOST_INTEREST_ITEM_ADDRESS(scn->target_type,
-				hi_acs_flags),
-				(u_int8_t *)&param,
-				4,
-				scn);
-		if (A_FAILED(status)) {
-			printk("BMIReadMemory for hi_acs_flags failed \n");
-			break;
-		}
-
-		param |= (HI_ACS_FLAGS_SDIO_SWAP_MAILBOX_SET |
-			HI_ACS_FLAGS_ALT_DATA_CREDIT_SIZE);
-
-		if (!vos_is_ptp_tx_opt_enabled() &&
-		    !vos_is_ocb_tx_per_pkt_stats_enabled())
-			param |= HI_ACS_FLAGS_SDIO_REDUCE_TX_COMPL_SET;
-
-		/* enable TX completion to collect tx_desc for pktlog */
-		if (vos_is_packet_log_enabled())
-			param &= ~HI_ACS_FLAGS_SDIO_REDUCE_TX_COMPL_SET;
-
-		BMIWriteMemory(scn->hif_hdl,
-				host_interest_item_address(scn->target_type,
-				offsetof(struct host_interest_s,
-					hi_acs_flags)),
-				(u_int8_t *)&param, 4, scn);
-
-	}while(FALSE);
-
-	return status;
-}
-
-void
-ol_target_ready(struct ol_softc *scn, void *cfg_ctx)
-{
-	u_int32_t value = 0;
-	A_STATUS status = EOK;
-
-	status = HIFDiagReadMem(scn->hif_hdl,
-		host_interest_item_address(scn->target_type,
-		offsetof(struct host_interest_s, hi_acs_flags)),
-		(A_UCHAR *)&value, sizeof(u_int32_t));
-
-	if (status != EOK) {
-		printk("%s: HIFDiagReadMem failed:%d\n", __func__, status);
-		return;
-	}
-
-	if (value & HI_ACS_FLAGS_SDIO_SWAP_MAILBOX_FW_ACK) {
-		printk("MAILBOX SWAP Service is enabled!\n");
-		HIFSetMailboxSwap(scn->hif_hdl);
-	}
-
-	if (value & HI_ACS_FLAGS_SDIO_REDUCE_TX_COMPL_FW_ACK) {
-		printk("Reduced Tx Complete service is enabled!\n");
-		ol_cfg_set_tx_free_at_download(cfg_ctx);
-
-	}
-#ifdef HIF_MBOX_SLEEP_WAR
-	HIFSetMboxSleep(scn->hif_hdl, true, true, true);
-#endif
-}
-#endif
 
 #ifdef HIF_USB
 static A_STATUS

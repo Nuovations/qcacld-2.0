@@ -9957,6 +9957,7 @@ eHalStatus sme_SetMaxTxPowerPerBand(eCsrBand band, v_S7_t dB,
 	tSmeCmd *set_max_tx_pwr_per_band;
 	tpAniSirGlobal mac_ctx = PMAC_STRUCT(hal);
 
+	msg.type = 0;
         if (mac_ctx->max_power_cmd_pending) {
            smsLog(mac_ctx, LOG1,
                  FL("set max tx power already in progress"));

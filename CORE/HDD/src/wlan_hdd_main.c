@@ -8640,11 +8640,7 @@ static int __hdd_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 
    switch (cmd) {
    case (SIOCDEVPRIVATE + 1):
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,6,0)) && defined(CONFIG_X86_64)
       if (in_compat_syscall())
-#else
-      if (is_compat_task())
-#endif
          ret = hdd_driver_compat_ioctl(pAdapter, ifr);
       else
          ret = hdd_driver_ioctl(pAdapter, ifr);
@@ -17686,22 +17682,41 @@ int hdd_wlan_startup(struct device *dev, v_VOID_t *hif_sc)
    thermalParam.sme_throttle_duty_cycle_tbl[3]=
        pHddCtx->cfg_ini->throttle_dutycycle_level3;
 
-   thermalParam.smeThermalLevels[0].smeMinTempThreshold =
-       pHddCtx->cfg_ini->thermalTempMinLevel0;
-   thermalParam.smeThermalLevels[0].smeMaxTempThreshold =
-       pHddCtx->cfg_ini->thermalTempMaxLevel0;
-   thermalParam.smeThermalLevels[1].smeMinTempThreshold =
-       pHddCtx->cfg_ini->thermalTempMinLevel1;
-   thermalParam.smeThermalLevels[1].smeMaxTempThreshold =
-       pHddCtx->cfg_ini->thermalTempMaxLevel1;
-   thermalParam.smeThermalLevels[2].smeMinTempThreshold =
-       pHddCtx->cfg_ini->thermalTempMinLevel2;
-   thermalParam.smeThermalLevels[2].smeMaxTempThreshold =
-       pHddCtx->cfg_ini->thermalTempMaxLevel2;
-   thermalParam.smeThermalLevels[3].smeMinTempThreshold =
-       pHddCtx->cfg_ini->thermalTempMinLevel3;
-   thermalParam.smeThermalLevels[3].smeMaxTempThreshold =
-       pHddCtx->cfg_ini->thermalTempMaxLevel3;
+   if (!pHddCtx->isAutoBoard) {
+       thermalParam.smeThermalLevels[0].smeMinTempThreshold =
+           pHddCtx->cfg_ini->thermalTempMinLevel0;
+       thermalParam.smeThermalLevels[0].smeMaxTempThreshold =
+           pHddCtx->cfg_ini->thermalTempMaxLevel0;
+       thermalParam.smeThermalLevels[1].smeMinTempThreshold =
+           pHddCtx->cfg_ini->thermalTempMinLevel1;
+       thermalParam.smeThermalLevels[1].smeMaxTempThreshold =
+           pHddCtx->cfg_ini->thermalTempMaxLevel1;
+       thermalParam.smeThermalLevels[2].smeMinTempThreshold =
+           pHddCtx->cfg_ini->thermalTempMinLevel2;
+       thermalParam.smeThermalLevels[2].smeMaxTempThreshold =
+           pHddCtx->cfg_ini->thermalTempMaxLevel2;
+       thermalParam.smeThermalLevels[3].smeMinTempThreshold =
+           pHddCtx->cfg_ini->thermalTempMinLevel3;
+       thermalParam.smeThermalLevels[3].smeMaxTempThreshold =
+           pHddCtx->cfg_ini->thermalTempMaxLevel3;
+    } else {
+       thermalParam.smeThermalLevels[0].smeMinTempThreshold =
+           pHddCtx->cfg_ini->auThermalTempMinLevel0;
+       thermalParam.smeThermalLevels[0].smeMaxTempThreshold =
+           pHddCtx->cfg_ini->auThermalTempMaxLevel0;
+       thermalParam.smeThermalLevels[1].smeMinTempThreshold =
+           pHddCtx->cfg_ini->auThermalTempMinLevel1;
+       thermalParam.smeThermalLevels[1].smeMaxTempThreshold =
+           pHddCtx->cfg_ini->auThermalTempMaxLevel1;
+       thermalParam.smeThermalLevels[2].smeMinTempThreshold =
+           pHddCtx->cfg_ini->auThermalTempMinLevel2;
+       thermalParam.smeThermalLevels[2].smeMaxTempThreshold =
+           pHddCtx->cfg_ini->auThermalTempMaxLevel2;
+       thermalParam.smeThermalLevels[3].smeMinTempThreshold =
+           pHddCtx->cfg_ini->auThermalTempMinLevel3;
+       thermalParam.smeThermalLevels[3].smeMaxTempThreshold =
+           pHddCtx->cfg_ini->auThermalTempMaxLevel3;
+    }
 
    hdd_get_thermal_shutdown_ini_param(&thermalParam, pHddCtx);
 
@@ -20867,4 +20882,3 @@ module_param(enable_11d, int,
 
 module_param(country_code, charp,
              S_IRUSR | S_IRGRP | S_IROTH);
-

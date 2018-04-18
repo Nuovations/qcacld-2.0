@@ -726,6 +726,7 @@ typedef struct wma_handle {
 	vos_event_t wow_tx_complete;
 	vos_event_t runtime_suspend;
 	vos_event_t recovery_event;
+	vos_event_t pkgid_event;
 
 	t_cfg_nv_param cfg_nv;
 
@@ -750,6 +751,7 @@ typedef struct wma_handle {
 	bool egap_support;
 #endif
 	bool wmi_ready;
+	u_int32_t pkgid_value;
 	u_int32_t wlan_init_status;
 	adf_os_device_t adf_dev;
 	u_int32_t phy_capability; /* PHY Capability from Target*/

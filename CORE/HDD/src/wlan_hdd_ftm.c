@@ -73,7 +73,7 @@
 #include "cfgApi.h"
 #include <adf_os_lock.h>
 
-#if  defined(QCA_WIFI_FTM)
+#if defined(QCA_WIFI_FTM)
 #include "bmi.h"
 #include "ol_fw.h"
 #include "testmode.h"
@@ -1061,11 +1061,7 @@ int wlan_hdd_qcmbr_unified_ioctl(hdd_adapter_t *pAdapter, struct ifreq *ifr)
 {
     int ret = 0;
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,6,0)) && defined(CONFIG_X86_64)
     if (in_compat_syscall()) {
-#else
-    if (is_compat_task()) {
-#endif
         ret = wlan_hdd_qcmbr_compat_ioctl(pAdapter, ifr);
     } else {
         ret = wlan_hdd_qcmbr_ioctl(pAdapter, ifr);

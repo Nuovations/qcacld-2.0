@@ -859,11 +859,6 @@ enum wlan_hdd_tm_cmd
 
 #define WLAN_HDD_TM_DATA_MAX_LEN    5000
 
-enum wlan_hdd_vendor_ie_access_policy {
-	WLAN_HDD_VENDOR_IE_ACCESS_NONE = 0,
-	WLAN_HDD_VENDOR_IE_ACCESS_ALLOW_IF_LISTED,
-};
-
 static const struct nla_policy wlan_hdd_tm_policy[WLAN_HDD_TM_ATTR_MAX + 1] =
 {
     [WLAN_HDD_TM_ATTR_CMD]        = { .type = NLA_U32 },
@@ -871,6 +866,11 @@ static const struct nla_policy wlan_hdd_tm_policy[WLAN_HDD_TM_ATTR_MAX + 1] =
                                     .len = WLAN_HDD_TM_DATA_MAX_LEN },
 };
 #endif /* WLAN_NL80211_TESTMODE */
+
+enum wlan_hdd_vendor_ie_access_policy {
+	WLAN_HDD_VENDOR_IE_ACCESS_NONE = 0,
+	WLAN_HDD_VENDOR_IE_ACCESS_ALLOW_IF_LISTED,
+};
 
 #ifdef FEATURE_WLAN_EXTSCAN
 
@@ -18638,7 +18638,15 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
         //Bss already started. just return.
         //TODO Probably it should update some beacon params.
         vos_mem_free(sme_config_ptr);
-        hddLog( LOGE, "Bss Already started...Ignore the request");
+        if (pHostapdAdapter->device_mode == WLAN_HDD_SOFTAP)
+        {
+            hddLog( LOGE, "Bss Already started...so restart Bss");
+            wlan_hdd_restart_sap(pHostapdAdapter);
+        }
+        else
+        {
+            hddLog( LOGE, "Bss Already started...Ignore the request");
+        }
         EXIT();
         return 0;
     }
@@ -19590,6 +19598,9 @@ static int __wlan_hdd_cfg80211_change_beacon(struct wiphy *wiphy,
     hdd_context_t *pHddCtx;
     beacon_data_t *old,*new;
     int status;
+    v_U8_t *pIe = NULL;
+    v_U8_t *pTlv = NULL;
+    v_U16_t pTlv_len = 0;
 
     ENTER();
 
@@ -19641,7 +19652,17 @@ static int __wlan_hdd_cfg80211_change_beacon(struct wiphy *wiphy,
     }
 
     pAdapter->sessionCtx.ap.beacon = new;
-    status = wlan_hdd_cfg80211_start_bss(pAdapter, params, NULL, 0, 0);
+    pTlv =  new->head + (uintptr_t)OFFSET_OF(struct ieee80211_mgmt, u.beacon.variable);
+    pTlv_len = new->head_len - (uintptr_t)OFFSET_OF(struct ieee80211_mgmt, u.beacon.variable);
+    pIe = wlan_hdd_cfg80211_get_ie_ptr(pTlv, pTlv_len,WLAN_EID_SSID);
+    if (pIe != NULL)
+    {
+         status = wlan_hdd_cfg80211_start_bss(pAdapter, params, &pIe[2], pIe[1], 0);
+    }
+    else
+    {
+        status = wlan_hdd_cfg80211_start_bss(pAdapter, params, NULL, 0, 0);
+    }
 
     EXIT();
     return status;
