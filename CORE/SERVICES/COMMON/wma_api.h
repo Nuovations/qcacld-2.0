@@ -114,6 +114,8 @@ v_BOOL_t wma_needshutdown(v_VOID_t *vos_context);
 
 VOS_STATUS wma_wait_for_ready_event(WMA_HANDLE handle);
 
+VOS_STATUS wma_wait_for_pkgid_event(WMA_HANDLE handle, bool *isAuto);
+
 tANI_U8 wma_map_channel(tANI_U8 mapChannel);
 
 int wma_cli_get_command(void *wmapvosContext, int vdev_id,

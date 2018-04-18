@@ -871,6 +871,7 @@ VOS_STATUS vos_preStart( v_CONTEXT_t vosContext )
    VOS_STATUS vStatus          = VOS_STATUS_SUCCESS;
    pVosContextType pVosContext = (pVosContextType)vosContext;
    v_VOID_t *scn;
+   hdd_context_t *pHddCtx;
    VOS_TRACE(VOS_MODULE_ID_SYS, VOS_TRACE_LEVEL_INFO,
              "vos prestart");
 
@@ -975,6 +976,15 @@ VOS_STATUS vos_preStart( v_CONTEXT_t vosContext )
       HTCStop(gpVosContext->htc_ctx);
       VOS_ASSERT( 0 );
       return VOS_STATUS_E_FAILURE;
+   }
+
+   pHddCtx = (hdd_context_t *)vos_get_context(VOS_MODULE_ID_HDD, gpVosContext);
+   if (pHddCtx) {
+       vStatus = wma_wait_for_pkgid_event(gpVosContext->pWDAContext,
+                                          &(pHddCtx->isAutoBoard));
+       if (!VOS_IS_STATUS_SUCCESS(vStatus))
+           VOS_TRACE(VOS_MODULE_ID_SYS, VOS_TRACE_LEVEL_ERROR,
+                    "Fail to get PKGID event from target firmware");
    }
 
    HTCSetTargetToSleep(scn);

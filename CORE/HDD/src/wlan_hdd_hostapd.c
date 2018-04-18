@@ -923,7 +923,7 @@ static int __hdd_hostapd_ioctl(struct net_device *dev,
 
    switch (cmd) {
    case (SIOCDEVPRIVATE + 1):
-      if (is_compat_task())
+      if (in_compat_syscall())
          ret = hdd_hostapd_driver_compat_ioctl(pAdapter, ifr);
       else
          ret = hdd_hostapd_driver_ioctl(pAdapter, ifr);

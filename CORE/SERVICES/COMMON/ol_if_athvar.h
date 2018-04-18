@@ -84,7 +84,7 @@ enum ol_ath_tx_ecodes  {
     RX_RCV_MSG_TYPE_TEST
 } ;
 
-#ifdef HIF_SDIO
+#if defined(HIF_SDIO) || defined(HIF_PCI)
 #define MAX_FILE_NAME	NAME_MAX
 struct ol_fw_files {
     char image_file[MAX_FILE_NAME];
@@ -274,12 +274,12 @@ struct ol_softc {
     u_int32_t               set_ht_vht_ies:1; /* true if vht ies are set on target */
     bool                    scn_cwmenable;    /*CWM enable/disable state*/
     u_int8_t                max_no_of_peers;
-#ifdef HIF_PCI
+#if defined(HIF_PCI) && defined(CONFIG_CNSS)
     struct cnss_fw_files fw_files;
-#elif defined(HIF_SDIO)
+#elif defined(HIF_SDIO) || defined(HIF_PCI)
     struct ol_fw_files fw_files;
 #endif
-#if defined(CONFIG_CNSS) || defined(HIF_SDIO)
+#if defined(CONFIG_CNSS) || defined(HIF_SDIO) || defined(HIF_PCI)
     void *ramdump_base;
     unsigned long ramdump_address;
     unsigned long ramdump_size;

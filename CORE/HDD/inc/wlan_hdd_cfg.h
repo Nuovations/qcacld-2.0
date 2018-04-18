@@ -2235,6 +2235,46 @@ typedef enum
 #define CFG_THERMAL_TEMP_MAX_LEVEL3_MAX       ( 1000 )
 #define CFG_THERMAL_TEMP_MAX_LEVEL3_DEFAULT   ( 0 )
 
+/* Temperature Throttle configuration for AU Chipset */
+#define CFG_AU_THERMAL_TEMP_MIN_LEVEL0_NAME      "gAuThermalTempMinLevel0"
+#define CFG_AU_THERMAL_TEMP_MIN_LEVEL0_MIN       ( 0 )
+#define CFG_AU_THERMAL_TEMP_MIN_LEVEL0_MAX       ( 1000 )
+#define CFG_AU_THERMAL_TEMP_MIN_LEVEL0_DEFAULT   ( 0 )
+
+#define CFG_AU_THERMAL_TEMP_MAX_LEVEL0_NAME      "gAuThermalTempMaxLevel0"
+#define CFG_AU_THERMAL_TEMP_MAX_LEVEL0_MIN       ( 0 )
+#define CFG_AU_THERMAL_TEMP_MAX_LEVEL0_MAX       ( 1000 )
+#define CFG_AU_THERMAL_TEMP_MAX_LEVEL0_DEFAULT   ( 90 )
+
+#define CFG_AU_THERMAL_TEMP_MIN_LEVEL1_NAME      "gAuThermalTempMinLevel1"
+#define CFG_AU_THERMAL_TEMP_MIN_LEVEL1_MIN       ( 0 )
+#define CFG_AU_THERMAL_TEMP_MIN_LEVEL1_MAX       ( 1000 )
+#define CFG_AU_THERMAL_TEMP_MIN_LEVEL1_DEFAULT   ( 70 )
+
+#define CFG_AU_THERMAL_TEMP_MAX_LEVEL1_NAME      "gAuThermalTempMaxLevel1"
+#define CFG_AU_THERMAL_TEMP_MAX_LEVEL1_MIN       ( 0 )
+#define CFG_AU_THERMAL_TEMP_MAX_LEVEL1_MAX       ( 1000 )
+#define CFG_AU_THERMAL_TEMP_MAX_LEVEL1_DEFAULT   ( 110 )
+
+#define CFG_AU_THERMAL_TEMP_MIN_LEVEL2_NAME      "gAuThermalTempMinLevel2"
+#define CFG_AU_THERMAL_TEMP_MIN_LEVEL2_MIN       ( 0 )
+#define CFG_AU_THERMAL_TEMP_MIN_LEVEL2_MAX       ( 1000 )
+#define CFG_AU_THERMAL_TEMP_MIN_LEVEL2_DEFAULT   ( 90 )
+
+#define CFG_AU_THERMAL_TEMP_MAX_LEVEL2_NAME      "gAuThermalTempMaxLevel2"
+#define CFG_AU_THERMAL_TEMP_MAX_LEVEL2_MIN       ( 0 )
+#define CFG_AU_THERMAL_TEMP_MAX_LEVEL2_MAX       ( 1000 )
+#define CFG_AU_THERMAL_TEMP_MAX_LEVEL2_DEFAULT   ( 125 )
+
+#define CFG_AU_THERMAL_TEMP_MIN_LEVEL3_NAME      "gAuThermalTempMinLevel3"
+#define CFG_AU_THERMAL_TEMP_MIN_LEVEL3_MIN       ( 0 )
+#define CFG_AU_THERMAL_TEMP_MIN_LEVEL3_MAX       ( 1000 )
+#define CFG_AU_THERMAL_TEMP_MIN_LEVEL3_DEFAULT   ( 110 )
+
+#define CFG_AU_THERMAL_TEMP_MAX_LEVEL3_NAME      "gAuThermalTempMaxLevel3"
+#define CFG_AU_THERMAL_TEMP_MAX_LEVEL3_MIN       ( 0 )
+#define CFG_AU_THERMAL_TEMP_MAX_LEVEL3_MAX       ( 1000 )
+#define CFG_AU_THERMAL_TEMP_MAX_LEVEL3_DEFAULT   ( 0 )
 
 /*
  * Enable/Disable Modulated DTIM feature
@@ -5239,6 +5279,14 @@ struct hdd_config {
    v_U16_t                     thermalTempMaxLevel2;
    v_U16_t                     thermalTempMinLevel3;
    v_U16_t                     thermalTempMaxLevel3;
+   v_U16_t                     auThermalTempMinLevel0;
+   v_U16_t                     auThermalTempMaxLevel0;
+   v_U16_t                     auThermalTempMinLevel1;
+   v_U16_t                     auThermalTempMaxLevel1;
+   v_U16_t                     auThermalTempMinLevel2;
+   v_U16_t                     auThermalTempMaxLevel2;
+   v_U16_t                     auThermalTempMinLevel3;
+   v_U16_t                     auThermalTempMaxLevel3;
    v_U32_t                     TxPower2g;
    v_U32_t                     TxPower5g;
    v_U32_t                     gEnableDebugLog;

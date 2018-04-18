@@ -76,7 +76,7 @@ static u_int32_t refclk_speed_to_hz[] = {
 };
 #endif
 
-#ifdef HIF_SDIO
+#if defined(HIF_SDIO) || defined(HIF_PCI)
 
 #ifdef MULTI_IF_NAME
 #define PREFIX MULTI_IF_NAME "/"
@@ -109,8 +109,6 @@ static struct ol_fw_files FW_FILES_DEFAULT = {
 	PREFIX "otp.bin", PREFIX "utf.bin",
 	PREFIX "utfbd.bin", PREFIX "qsetup.bin",
 	PREFIX "epping.bin"};
-
-static A_STATUS ol_sdio_extra_initialization(struct ol_softc *scn);
 
 static int ol_get_fw_files_for_target(struct ol_fw_files *pfw_files,
                                  u32 target_version)
@@ -149,6 +147,10 @@ static int ol_get_fw_files_for_target(struct ol_fw_files *pfw_files,
     }
     return 0;
 }
+#endif
+
+#ifdef HIF_SDIO
+static A_STATUS ol_sdio_extra_initialization(struct ol_softc *scn);
 #endif
 
 #ifdef HIF_USB
@@ -990,7 +992,7 @@ int dump_CE_register(struct ol_softc *scn)
 }
 #endif
 
-#if (defined(CONFIG_CNSS) && !defined(HIF_USB)) || defined(HIF_SDIO)
+#if (defined(CONFIG_CNSS) && !defined(HIF_USB)) || defined(HIF_SDIO) || defined(HIF_PCI)
 static struct ol_softc *ramdump_scn;
 #ifdef TARGET_DUMP_FOR_NON_QC_PLATFORM
 void *ol_fw_dram_addr=NULL;
@@ -1131,12 +1133,12 @@ static void ramdump_work_handler(struct work_struct *ramdump)
 	ol_fw_axi_addr = (void *)(byte_ptr + DRAM_SIZE);
 	ol_fw_iram_addr = (void *)(byte_ptr + DRAM_SIZE + AXI_SIZE);
 
-	pr_err("%s: DRAM => mem = %#08x, len = %d\n", __func__,
-			(u_int32_t)ol_fw_dram_addr, DRAM_SIZE);
-	pr_err("%s: AXI  => mem = %#08x, len = %d\n", __func__,
-			(u_int32_t)ol_fw_axi_addr, AXI_SIZE);
-	pr_err("%s: IRAM => mem = %#08x, len = %d\n", __func__,
-			(u_int32_t)ol_fw_iram_addr, IRAM_SIZE);
+	pr_err("%s: DRAM => mem = %#08llx, len = %d\n", __func__,
+			(u_int64_t)ol_fw_dram_addr, DRAM_SIZE);
+	pr_err("%s: AXI  => mem = %#08llx, len = %d\n", __func__,
+			(u_int64_t)ol_fw_axi_addr, AXI_SIZE);
+	pr_err("%s: IRAM => mem = %#08llx, len = %d\n", __func__,
+			(u_int64_t)ol_fw_iram_addr, IRAM_SIZE);
 #endif
 
 	if (ol_copy_ramdump(ramdump_scn))
@@ -2076,7 +2078,7 @@ A_STATUS ol_patch_pll_switch(struct ol_softc * scn)
 }
 #endif
 
-#ifdef HIF_PCI
+#if defined(HIF_PCI) && defined(CONFIG_CNSS)
 /* AXI Start Address */
 #define TARGET_ADDR (0xa0000)
 
@@ -2115,14 +2117,14 @@ int ol_download_firmware(struct ol_softc *scn)
 	A_STATUS ret;
 #endif
 
-#ifdef HIF_PCI
+#if defined(HIF_PCI) && defined(CONFIG_CNSS)
 		if (0 != cnss_get_fw_files_for_target(&scn->fw_files,
 						scn->target_type,
 						scn->target_version)) {
 			printk("%s: No FW files from CNSS driver\n", __func__);
 			return -1;
 		}
-#elif defined(HIF_SDIO)
+#elif defined(HIF_SDIO) || defined(HIF_PCI)
        if (0 != ol_get_fw_files_for_target(&scn->fw_files,
                                               scn->target_version)) {
                 printk("%s: No FW files from driver\n", __func__);
@@ -2166,7 +2168,7 @@ int ol_download_firmware(struct ol_softc *scn)
 		printk("%s: Using 0x%x for the remainder of init\n", __func__, address);
 
 		if ( scn->enablesinglebinary == FALSE ) {
-#ifdef HIF_PCI
+#if defined(HIF_PCI) && defined(CONFIG_CNSS)
 			ol_transfer_codeswap_struct(scn);
 #endif
 
@@ -2529,7 +2531,7 @@ out:
 	return result;
 }
 
-#ifdef HIF_PCI
+#if defined(HIF_PCI) && !defined(TARGET_DUMP_FOR_NON_QC_PLATFORM)
 static void ol_dump_target_memory(HIF_DEVICE *hif_device, void *memoryBlock)
 {
 	char *bufferLoc = memoryBlock;
@@ -2633,6 +2635,7 @@ static int ol_read_reg_section(struct ol_softc *scn, char *ptr, uint32_t len)
 	return ol_diag_read_reg_loc(scn, ptr, len);
 }
 
+#ifndef TARGET_DUMP_FOR_NON_QC_PLATFORM
 #ifndef CONFIG_HL_SUPPORT
 static int ol_dump_fail_debug_info(struct ol_softc *scn, void *ptr)
 {
@@ -2647,6 +2650,7 @@ static int ol_dump_fail_debug_info(struct ol_softc *scn, void *ptr)
 {
 	return 0;
 }
+#endif
 #endif
 
 /**---------------------------------------------------------------------------
@@ -2718,7 +2722,15 @@ int ol_target_coredump(void *inst, void *memoryBlock, u_int32_t blockLength)
 			result = ol_diag_read(scn, bufferLoc, pos, readLen);
 
 		if (result == -EIO)
-			return ol_dump_fail_debug_info(scn, memoryBlock);
+                {
+#if defined(HIF_PCI) && !defined(TARGET_DUMP_FOR_NON_QC_PLATFORM)
+                        return ol_dump_fail_debug_info(scn, memoryBlock);
+#else
+                        pr_info("%s: target memory dump fail\n",__func__);
+                        ret = result;
+                        return ret;
+#endif
+                }
 
 		pr_info("%s: Section:%d Bytes Read:%0x\n", __func__,
 			sectionCount, result);

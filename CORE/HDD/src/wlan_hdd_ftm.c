@@ -1060,7 +1060,7 @@ int wlan_hdd_qcmbr_unified_ioctl(hdd_adapter_t *pAdapter, struct ifreq *ifr)
 {
     int ret = 0;
 
-    if (is_compat_task()) {
+    if (in_compat_syscall()) {
         ret = wlan_hdd_qcmbr_compat_ioctl(pAdapter, ifr);
     } else {
         ret = wlan_hdd_qcmbr_ioctl(pAdapter, ifr);
