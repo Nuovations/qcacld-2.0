@@ -50,6 +50,7 @@
 #include "sme_Api.h"
 #include "wlan_hdd_main.h"
 #include <net/cfg80211.h>
+#include <../net/wireless/reg.h>
 #include "regdomain.h"
 #include "regdomain_common.h"
 #include "vos_cnss.h"
