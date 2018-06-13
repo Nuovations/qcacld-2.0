@@ -1150,12 +1150,11 @@ VosWDThread
       /* Post Msg to detect thread stuck */
       if (test_and_clear_bit(WD_WLAN_DETECT_THREAD_STUCK,
                                    &pWdContext->wdEventFlag)) {
-
-       if (gpVosSchedContext &&
-           !test_bit(MC_SUSPEND_EVENT, &gpVosSchedContext->mcEventFlag))
-            vos_wd_detect_thread_stuck();
-       else
-            VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_INFO,
+           if (gpVosSchedContext &&
+               !test_bit(MC_SUSPEND_EVENT, &gpVosSchedContext->mcEventFlag))
+                vos_wd_detect_thread_stuck();
+           else
+                VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_INFO,
                "%s: controller thread %s id: %d is suspended do not attemp probing",
                __func__, current->comm, current->pid);
         /*
