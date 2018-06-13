@@ -185,7 +185,7 @@ dfs_bin5_check(struct ath_dfs *dfs)
    struct dfs_bin5radars *br;
         int index[DFS_MAX_B5_SIZE];
    u_int32_t n = 0, i = 0, i1 = 0, this = 0, prev = 0, rssi_diff = 0, width_diff = 0, bursts= 0;
-        u_int32_t total_diff=0, average_diff=0, total_width=0, average_width=0, numevents=0;
+   u_int32_t numevents=0;
    u_int64_t pri;
 
 
@@ -296,6 +296,8 @@ dfs_bin5_check(struct ath_dfs *dfs)
             /*
             * don't do this check since not all the cases have this kind of burst width variation.
             *
+                                u_int32_t total_diff=0, average_diff=0, total_width=0, average_width=0;
+
                                 for (i=0; i<bursts; i++){
                                         total_width += br->br_elems[index[i]].be_dur;
                                 }
@@ -311,9 +313,9 @@ dfs_bin5_check(struct ath_dfs *dfs)
                                     DFS_DPRINTK(ic, ATH_DEBUG_DFS_BIN5, "bursts=%u numevents=%u total_width=%d average_width=%d total_diff=%d average_diff=%d\n", bursts, numevents, total_width, average_width, total_diff, average_diff);
 
                                 }
-            */
                            DFS_DPRINTK(dfs, ATH_DEBUG_DFS_BIN5, "bursts=%u numevents=%u total_width=%d average_width=%d total_diff=%d average_diff=%d\n", bursts, numevents, total_width, average_width, total_diff, average_diff);
                            DFS_PRINTK("bin 5 radar detected, bursts=%d\n", bursts);
+                           */
                            return 1;
                         }
       }
