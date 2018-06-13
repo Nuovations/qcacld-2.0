@@ -31,6 +31,7 @@
   \brief WLAN Host Device Driver trace implementation
 
   ========================================================================*/
+#ifdef WLAN_DEBUG
 
 #include "vos_trace.h"
 #include "vos_types.h"
@@ -141,3 +142,5 @@ void hddTraceInit()
 {
 	vosTraceRegister(VOS_MODULE_ID_HDD, (tpvosTraceCb) & hddTraceDump);
 }
+
+#endif /* WLAN_DEBUG */
