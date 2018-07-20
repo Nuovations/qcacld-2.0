@@ -31,12 +31,13 @@
   \brief WLAN Host Device Driver trace implementation
 
   ========================================================================*/
-#ifdef WLAN_DEBUG
 
 #include "vos_trace.h"
 #include "vos_types.h"
 #include "wlan_hdd_trace.h"
 #include "wlan_hdd_main.h"
+
+#ifdef WLAN_DEBUG
 
 static tANI_U8 *hddTraceGetEventString(tANI_U32 code)
 {
@@ -126,6 +127,8 @@ static tANI_U8 *hddTraceGetEventString(tANI_U32 code)
 	}
 }
 
+#endif /* WLAN_DEBUG */
+
 void hddTraceDump(void *pMac, tpvosTraceRecord pRecord, tANI_U16 recIndex)
 {
     if (TRACE_CODE_HDD_RX_SME_MSG == pRecord->code)
@@ -142,5 +145,3 @@ void hddTraceInit()
 {
 	vosTraceRegister(VOS_MODULE_ID_HDD, (tpvosTraceCb) & hddTraceDump);
 }
-
-#endif /* WLAN_DEBUG */
