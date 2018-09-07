@@ -10390,7 +10390,11 @@ static hdd_adapter_t* hdd_alloc_station_adapter(hdd_context_t *pHddCtx,
       pWlanDev->features |= NETIF_F_RXCSUM;
       hdd_set_station_ops( pAdapter->dev );
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,12,0))
+      pWlanDev->needs_free_netdev = true;
+#else
       pWlanDev->destructor = free_netdev;
+#endif
       pWlanDev->ieee80211_ptr = &pAdapter->wdev ;
       pWlanDev->tx_queue_len = HDD_NETDEV_TX_QUEUE_LEN;
       pAdapter->wdev.wiphy = pHddCtx->wiphy;
