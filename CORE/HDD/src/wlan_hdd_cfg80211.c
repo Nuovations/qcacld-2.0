@@ -27364,7 +27364,11 @@ void hdd_cfg80211_sched_scan_done_callback(void *callbackContext,
          */
         hdd_prevent_suspend_timeout(1000, WIFI_POWER_EVENT_WAKELOCK_SCAN);
     }
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,11,0))
+    cfg80211_sched_scan_results(pHddCtx->wiphy, 0);
+#else
     cfg80211_sched_scan_results(pHddCtx->wiphy);
+#endif
     VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
             "%s: cfg80211 scan result database updated", __func__);
 }
@@ -29879,7 +29883,11 @@ int __wlan_hdd_cfg80211_resume_wlan(struct wiphy *wiphy)
                  */
                 hdd_prevent_suspend_timeout(1000,
                                          WIFI_POWER_EVENT_WAKELOCK_RESUME_WLAN);
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,11,0))
+                cfg80211_sched_scan_results(pHddCtx->wiphy, 0);
+#else
                 cfg80211_sched_scan_results(pHddCtx->wiphy);
+#endif
             }
 
             hddLog(LOG1, FL("cfg80211 scan result database updated"));
