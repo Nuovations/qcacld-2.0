@@ -2174,6 +2174,9 @@ static void hdd_SendReAssocEvent(struct net_device *dev,
     tANI_U32 rspRsnLength = 0;
     struct ieee80211_channel *chan;
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,11,0))
+    struct cfg80211_roam_info roam_info = {};
+#endif
     uint8_t buf_ssid_ie[2 + SIR_MAC_SSID_EID_MAX]; /* 2 bytes for EID and len */
     uint8_t *buf_ptr, ssid_ie_len;
     struct cfg80211_bss *bss = NULL;
@@ -2255,9 +2258,25 @@ static void hdd_SendReAssocEvent(struct net_device *dev,
     hddLog(LOG2, FL("Req RSN IE:"));
     VOS_TRACE_HEX_DUMP(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_DEBUG,
        final_req_ie, (ssid_ie_len +reqRsnLength));
+
     hdd_send_roamed_ind(dev, bss, final_req_ie,
-                        (ssid_ie_len + reqRsnLength), rspRsnIe,
-                        rspRsnLength);
+                       (ssid_ie_len + reqRsnLength), rspRsnIe,
+                       rspRsnLength);
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,11,0))
+    roam_info.channel = chan;
+    roam_info.bssid = pCsrRoamInfo->bssid;
+    roam_info.req_ie = reqRsnIe;
+    roam_info.req_ie_len = reqRsnLength;
+    roam_info.resp_ie = rspRsnIe;
+    roam_info.resp_ie_len = rspRsnLength;
+
+    cfg80211_roamed(dev, &roam_info, GFP_KERNEL);
+#else
+    cfg80211_roamed_bss(dev, bss,
+       final_req_ie, (ssid_ie_len + reqRsnLength),
+       rspRsnIe, rspRsnLength, GFP_KERNEL);
+#endif
 
     hdd_send_roam_auth_event(pHddCtx, pCsrRoamInfo->bssid,
                     reqRsnIe, reqRsnLength, rspRsnIe,
@@ -2417,6 +2436,9 @@ static eHalStatus hdd_AssociationCompletionHandler( hdd_adapter_t *pAdapter, tCs
     hdd_ap_ctx_t *hdd_ap_ctx;
     uint8_t default_sap_channel = 6;
     tSirResultCodes timeout_reason = 0;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,11,0))
+    struct cfg80211_roam_info roam_info = {};
+#endif
 #ifdef WLAN_FEATURE_ROAM_OFFLOAD
     if (pRoamInfo && pRoamInfo->roamSynchInProgress) {
        /* change logging before release */
@@ -2705,6 +2727,21 @@ static eHalStatus hdd_AssociationCompletionHandler( hdd_adapter_t *pAdapter, tCs
                                assocReqlen,
                                pFTAssocRsp,
                                assocRsplen);
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,11,0))
+                       roam_info.channel = chan;
+                       roam_info.bssid = pRoamInfo->bssid;
+                       roam_info.req_ie = pFTAssocReq;
+                       roam_info.req_ie_len = assocReqlen;
+                       roam_info.resp_ie = pFTAssocRsp;
+                       roam_info.resp_ie_len = assocRsplen;
+
+                       cfg80211_roamed(dev, &roam_info, GFP_KERNEL);
+#else
+                       cfg80211_roamed_bss(dev, roam_bss,
+                              pFTAssocReq, assocReqlen,
+                              pFTAssocRsp, assocRsplen,
+                              GFP_KERNEL);
+#endif
                     }
                     if (sme_GetFTPTKState(WLAN_HDD_GET_HAL_CTX(pAdapter),
                                           pAdapter->sessionId))
