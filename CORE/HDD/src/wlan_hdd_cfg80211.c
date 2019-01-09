@@ -20477,7 +20477,7 @@ wlan_hdd_cfg80211_inform_bss_frame( hdd_adapter_t *pAdapter,
         return NULL;
     }
 
-    chan = __ieee80211_get_channel(wiphy, freq);
+    chan = ieee80211_get_channel(wiphy, freq);
     /*
      * When the band is changed on the fly using the GUI, three things are done
      * 1. scan abort
@@ -20494,7 +20494,7 @@ wlan_hdd_cfg80211_inform_bss_frame( hdd_adapter_t *pAdapter,
      * callback is very small then band change will not reflect in SME and SME
      * reports to HDD all the channels corresponding to previous band.this is
      * due to race condition.but those channels are invalid to the new band and
-     * so this function __ieee80211_get_channel will return NULL.Each time we
+     * so this function ieee80211_get_channel will return NULL.Each time we
      * report scan result with this pointer null warning kernel trace is printed
      * if the scan results contain large number of APs continuously kernel
      * warning trace is printed and it will lead to apps watch dog bark.
