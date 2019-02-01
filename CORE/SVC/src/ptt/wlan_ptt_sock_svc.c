@@ -252,7 +252,12 @@ static void ptt_cmd_handler(const void *data, int data_len, void *ctx, int pid)
 	 * audit note: it is ok to pass a NULL policy here since a
 	 * length check on the data is added later already
 	 */
-	if (nla_parse(tb, CLD80211_ATTR_MAX, data, data_len, NULL)) {
+	if (nla_parse(tb, CLD80211_ATTR_MAX, data, data_len,
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,11,0))
+                    NULL, NULL)) {
+#else
+                    NULL)) {
+#endif
 		PTT_TRACE(VOS_TRACE_LEVEL_ERROR, "Invalid ATTR");
 		return;
 	}

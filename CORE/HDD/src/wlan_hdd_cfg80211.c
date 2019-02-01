@@ -29284,7 +29284,13 @@ static int __wlan_hdd_cfg80211_testmode(struct wiphy *wiphy,
 
     ENTER();
 
-    err = nla_parse(tb, WLAN_HDD_TM_ATTR_MAX, data, len, wlan_hdd_tm_policy);
+    err = nla_parse(tb, WLAN_HDD_TM_ATTR_MAX, data, len,
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,11,0))
+		wlan_hdd_tm_policy, NULL);
+#else
+		wlan_hdd_tm_policy);
+#endif
+
     if (err) {
         hddLog(LOGE, FL("Testmode INV ATTR"));
         return err;
