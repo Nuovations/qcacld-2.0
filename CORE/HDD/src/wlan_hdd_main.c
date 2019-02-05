@@ -17160,14 +17160,14 @@ static void __exit hdd_module_exit(void)
 
 #ifdef MODULE
 static int fwpath_changed_handler(const char *kmessage,
-                                 struct kernel_param *kp)
+                                 const struct kernel_param *kp)
 {
    return param_set_copystring(kmessage, kp);
 }
 
 #if ! defined(QCA_WIFI_FTM)
 static int con_mode_handler(const char *kmessage,
-                                 struct kernel_param *kp)
+                                 const struct kernel_param *kp)
 {
    return param_set_int(kmessage, kp);
 }
@@ -17233,7 +17233,7 @@ static int fwpath_changed_handler(const char *kmessage,
   \return -
 
   --------------------------------------------------------------------------*/
-static int con_mode_handler(const char *kmessage, struct kernel_param *kp)
+static int con_mode_handler(const char *kmessage, const struct kernel_param *kp)
 {
    int ret;
 
@@ -19411,12 +19411,23 @@ MODULE_DESCRIPTION("WLAN HOST DEVICE DRIVER");
 #if  defined(QCA_WIFI_FTM)
 module_param(con_mode, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 #else
-module_param_call(con_mode, con_mode_handler, param_get_int, &con_mode,
+
+static struct kernel_param_ops param_ops_con_mode = {
+	.set = con_mode_handler,
+	.get = param_get_int,
+}
+
+module_param_cb(con_mode, &param_ops_con_mode, &con_mode,
                     S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 #endif
 
-module_param_call(fwpath, fwpath_changed_handler, param_get_string, &fwpath,
-                    S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+static struct kernel_param_ops param_ops_fwpath = {
+	.set = fwpath_changed_handler,
+	.get = param_get_string,
+};
+
+module_param_cb(fwpath, &param_ops_fwpath, &fwpath,
+		S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 
 module_param(enable_dfs_chan_scan, int,
              S_IRUSR | S_IRGRP | S_IROTH);
