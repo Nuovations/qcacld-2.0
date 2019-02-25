@@ -42,10 +42,12 @@
 #define WLAN_INI_FILE              "wlan/qca_cld/" PREFIX "WCNSS_qcom_cfg.ini"
 #define WLAN_CFG_FILE              "wlan/qca_cld/" PREFIX "WCNSS_cfg.dat"
 #define WLAN_MAC_FILE              "wlan/qca_cld/" PREFIX "wlan_mac.bin"
+#define WLAN_MAC_DT_FILE           "wlan/qca_cld/" PREFIX "wlan_mac"
 #else
 #define WLAN_INI_FILE              "wlan/" PREFIX "qcom_cfg.ini"
 #define WLAN_CFG_FILE              "wlan/" PREFIX "cfg.dat"
 #define WLAN_MAC_FILE              "wlan/" PREFIX "wlan_mac.bin"
+#define WLAN_MAC_DT_FILE           "wlan/" PREFIX "wlan_mac"
 #endif // MSM_PLATFORM
 
 VOS_STATUS hdd_get_cfg_file_size(v_VOID_t *pCtx, char *pFileName, v_SIZE_t *pBufSize);
