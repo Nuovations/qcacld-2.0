@@ -6644,6 +6644,43 @@ static void update_mac_from_string(hdd_context_t *pHddCtx, tCfgIniEntry *macTabl
 }
 
 /*
+ * This function tries to update mac address from the device tree.
+ * It overwrites the MAC address if there are links to device tree entries.
+ */
+static int get_macs_from_dt(hdd_context_t *pHddCtx)
+{
+   int i;
+
+   for (i = 0; i < WLAN_MAX_INTERFACES; i++)
+   {
+      const struct firmware *fw = NULL;
+      char fName[20];
+      int status;
+
+      sprintf(fName, WLAN_MAC_DT_FILE "%d", i);
+
+      status = request_firmware(&fw, fName, pHddCtx->parent_dev);
+      if (!status && fw && fw->data && fw->size)
+      {
+         /* Successfully read mac from device tree */
+         vos_mem_copy((v_U8_t *)&pHddCtx->cfg_ini->intfMacAddr[i].bytes[0],
+                      fw->data, VOS_MAC_ADDR_SIZE);
+      }
+      else
+      {
+         status = 1;
+      }
+      release_firmware(fw);
+
+      /* Only fail if the first MAC cannot be read. */
+      if (status && i == 0)
+         return 1;
+   }
+
+   return 0;
+}
+
+/*
  * This function tries to update mac address from cfg file.
  * It overwrites the MAC address if config file exist.
  */
@@ -6657,6 +6694,18 @@ VOS_STATUS hdd_update_mac_config(hdd_context_t *pHddCtx)
    tSirMacAddr customMacAddr;
 
    VOS_STATUS vos_status = VOS_STATUS_SUCCESS;
+
+   /* First try to get MACs from device tree */
+   status = get_macs_from_dt(pHddCtx);
+   if (!status)
+   {
+      vos_mem_copy(&customMacAddr,
+                   &pHddCtx->cfg_ini->intfMacAddr[0].bytes[0],
+                   sizeof(tSirMacAddr));
+      sme_SetCustomMacAddr(customMacAddr);
+
+      return vos_status;
+   }
 
    memset(macTable, 0, sizeof(macTable));
    status = qca_request_firmware(&fw, WLAN_MAC_FILE, pHddCtx->parent_dev);
