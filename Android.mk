@@ -65,10 +65,10 @@ include $(BUILD_PREBUILT)
 # firmware_bin/WCNSS_cfg.dat
 include $(CLEAR_VARS)
 LOCAL_MODULE := WCNSS_cfg
-LOCAL_MODULE_STEM := WCNSS_cfg.dat
+LOCAL_MODULE_STEM := cfg.dat
 LOCAL_MODULE_TAGS := debug eng optional
 LOCAL_MODULE_CLASS := ETC
-LOCAL_MODULE_PATH := $(TARGET_OUT_VENDOR)/lib/firmware/wlan
+LOCAL_MODULE_PATH := $(TARGET_OUT_VENDOR)/firmware/wlan
 LOCAL_SRC_FILES := firmware_bin/WCNSS_cfg.dat
 ALL_DEFAULT_INSTALLED_MODULES += $(LOCAL_MODULE)
 include $(BUILD_PREBUILT)
@@ -76,10 +76,10 @@ include $(BUILD_PREBUILT)
 # firmware_bin/WCNSS_qcom_cfg.ini
 include $(CLEAR_VARS)
 LOCAL_MODULE := WCNSS_qcom_cfg
-LOCAL_MODULE_STEM := WCNSS_qcom_cfg.ini
+LOCAL_MODULE_STEM := qcom_cfg.ini
 LOCAL_MODULE_TAGS := debug eng optional
 LOCAL_MODULE_CLASS := ETC
-LOCAL_MODULE_PATH := $(TARGET_OUT_VENDOR)/lib/firmware/wlan
+LOCAL_MODULE_PATH := $(TARGET_OUT_VENDOR)/firmware/wlan
 LOCAL_SRC_FILES := firmware_bin/WCNSS_qcom_cfg.ini
 ALL_DEFAULT_INSTALLED_MODULES += $(LOCAL_MODULE)
 include $(BUILD_PREBUILT)
