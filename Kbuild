@@ -1507,6 +1507,9 @@ CDEFINES += -DQCA_HT_20_24G_STA_ONLY
 
 else #CONFIG_MOBILE_ROUTER
 
+#Enable 4address scheme
+CDEFINES += -DFEATURE_WLAN_STA_4ADDR_SCHEME
+
 #Open P2P device interface only for non-Mobile router use cases
 CDEFINES += -DWLAN_OPEN_P2P_INTERFACE
 
