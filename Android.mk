@@ -1,4 +1,4 @@
-ifeq ($(TARGET_DIGI_QCA6574),true)
+ifeq ($(BOARD_HAVE_WIFI_QCA6574),true)
 
 LOCAL_PATH := $(call my-dir)
 ANDROID_ROOT := $(PWD)
