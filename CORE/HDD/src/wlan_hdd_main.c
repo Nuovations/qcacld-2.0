@@ -187,6 +187,9 @@ static struct kparam_string fwpath = {
 static char *country_code;
 static int   enable_11d = -1;
 static int   enable_dfs_chan_scan = -1;
+#ifdef WLAN_OPEN_P2P_INTERFACE
+static int   enable_p2p = -1;
+#endif
 
 #ifndef MODULE
 static int wlan_hdd_inited;
@@ -17385,7 +17388,8 @@ int hdd_wlan_startup(struct device *dev, v_VOID_t *hif_sc)
     if(VOS_MONITOR_MODE != vos_get_conparam()){
       /* Open P2P device interface */
 #ifndef SUPPORT_P2P_BY_ONE_INTF_WLAN
-      if (pAdapter != NULL &&
+      hddLog(VOS_TRACE_LEVEL_INFO, "%s: P2P interface %s", __func__, enable_p2p == 1 ? "enabled" : "disabled");
+      if (pAdapter != NULL && 1 == enable_p2p &&
           !hdd_cfg_is_sub20_channel_width_enabled(pHddCtx)) {
 #else
       {
@@ -20882,3 +20886,7 @@ module_param(enable_11d, int,
 
 module_param(country_code, charp,
              S_IRUSR | S_IRGRP | S_IROTH);
+#ifdef WLAN_OPEN_P2P_INTERFACE
+module_param(enable_p2p, int,
+             S_IRUSR | S_IRGRP | S_IROTH);
+#endif
