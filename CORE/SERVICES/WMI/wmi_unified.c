@@ -975,7 +975,7 @@ void __wmi_control_rx(struct wmi_unified *wmi_handle, wmi_buf_t evt_buf)
 							data, len, id,
 							&wmi_cmd_struct_ptr);
 	if (tlv_ok_status != 0) {
-			pr_err("%s: Error: id=0x%d, wmitlv_check_and_pad_tlvs ret=%d\n",
+			pr_debug("%s: Error: id=0x%d, wmitlv_check_and_pad_tlvs ret=%d\n",
 				__func__, id, tlv_ok_status);
 			goto end;
 	}
