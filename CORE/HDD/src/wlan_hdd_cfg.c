@@ -5674,7 +5674,6 @@ VOS_STATUS hdd_parse_config_ini(hdd_context_t* pHddCtx)
    /** Pointer for firmware image data */
    const struct firmware *fw = NULL;
    char *buffer, *line, *pTemp = NULL;
-   size_t size;
    char *name, *value;
    /* cfgIniTable is static to avoid excess stack usage */
    static tCfgIniEntry cfgIniTable[MAX_CFG_INI_ITEMS];
@@ -5712,7 +5711,8 @@ VOS_STATUS hdd_parse_config_ini(hdd_context_t* pHddCtx)
    pTemp = buffer;
 
    vos_mem_copy((void*)buffer,(void *)fw->data, fw->size);
-   size = fw->size;
+   /* Make sure the buffer is NULL terminated before processing it */
+   buffer[fw->size] = '\0';
 
    while (buffer != NULL)
    {
@@ -6724,7 +6724,7 @@ VOS_STATUS hdd_update_mac_config(hdd_context_t *pHddCtx)
       goto config_exit;
    }
 
-   temp = buffer = (char *) vos_mem_malloc(fw->size + 1);
+   temp = buffer = (char *)vos_mem_malloc(fw->size + 1);
    if (NULL == buffer) {
       hddLog(VOS_TRACE_LEVEL_FATAL, "%s: unable to allocate memory",__func__);
       release_firmware(fw);
@@ -6732,6 +6732,7 @@ VOS_STATUS hdd_update_mac_config(hdd_context_t *pHddCtx)
    }
 
    vos_mem_copy((void*)buffer,(void *)fw->data, fw->size);
+   /* Make sure the buffer is NULL terminated before processing it */
    buffer[fw->size] = '\0';
 
    /* data format:
