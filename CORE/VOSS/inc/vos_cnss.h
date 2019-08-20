@@ -39,6 +39,7 @@
 #include <linux/workqueue.h>
 #include <linux/sched.h>
 #include <linux/pci.h>
+#include <linux/version.h>
 
 enum cnss_bus_width_type {
 	CNSS_BUS_WIDTH_NONE,
@@ -89,7 +90,11 @@ static inline void vos_flush_delayed_work(void *dwork)
 static inline void vos_pm_wake_lock_init(struct wakeup_source *ws,
 					const char *name)
 {
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
+	wakeup_source_add(ws);
+#else
 	wakeup_source_init(ws, name);
+#endif
 }
 
 static inline void vos_pm_wake_lock(struct wakeup_source *ws)
