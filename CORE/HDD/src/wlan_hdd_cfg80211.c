@@ -12046,6 +12046,8 @@ static int __wlan_hdd_cfg80211_get_station(struct wiphy *wiphy,
     wlan_hdd_get_rssi(pAdapter, &sinfo->signal);
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(4,9,0))
     sinfo->filled |= STATION_INFO_SIGNAL;
+#else
+    sinfo->filled |= BIT(NL80211_STA_INFO_SIGNAL);
 #endif
 
 #ifdef WLAN_FEATURE_LPSS
@@ -12462,11 +12464,15 @@ static int __wlan_hdd_cfg80211_get_station(struct wiphy *wiphy,
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(4,9,0))
     sinfo->filled |= STATION_INFO_TX_BITRATE;
+#else
+    sinfo->filled |= BIT(NL80211_STA_INFO_TX_BITRATE);
 #endif
 
     sinfo->tx_bytes = pAdapter->stats.tx_bytes;
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(4,9,0))
     sinfo->filled |= STATION_INFO_TX_BYTES;
+#else
+    sinfo->filled |= BIT(NL80211_STA_INFO_TX_BYTES);
 #endif
 
     sinfo->tx_packets =
@@ -12492,16 +12498,22 @@ static int __wlan_hdd_cfg80211_get_station(struct wiphy *wiphy,
        STATION_INFO_TX_PACKETS |
        STATION_INFO_TX_RETRIES |
        STATION_INFO_TX_FAILED;
+#else
+    sinfo->filled |= BIT(NL80211_STA_INFO_TX_PACKETS) | BIT(NL80211_STA_INFO_TX_RETRIES) | BIT(NL80211_STA_INFO_TX_FAILED);
 #endif
 
     sinfo->rx_bytes = pAdapter->stats.rx_bytes;
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(4,9,0))
     sinfo->filled |= STATION_INFO_RX_BYTES;
+#else
+    sinfo->filled |= BIT(NL80211_STA_INFO_RX_BYTES);
 #endif
 
     sinfo->rx_packets = pAdapter->stats.rx_packets;
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(4,9,0))
     sinfo->filled |= STATION_INFO_RX_PACKETS;
+#else
+    sinfo->filled |= BIT(NL80211_STA_INFO_RX_PACKETS);
 #endif
 
     MTRACE(vos_trace(VOS_MODULE_ID_HDD,
@@ -16492,9 +16504,56 @@ void wlan_hdd_cfg80211_extscan_callback(void *ctx, const tANI_U16 evType,
 
 #endif /* FEATURE_WLAN_EXTSCAN */
 
+/**
+ * __wlan_hdd_cfg80211_dump_station() - dump station statistics
+ * @wiphy: Pointer to wiphy
+ * @dev: Pointer to network device
+ * @idx: variable to determine whether to get stats or not
+ * @mac: Pointer to mac
+ * @sinfo: Pointer to station info
+ *
+ * Return: 0 for success, non-zero for failure
+ */
+static int __wlan_hdd_cfg80211_dump_station(struct wiphy *wiphy,
+				struct net_device *dev,
+				int idx, u8 *mac,
+				struct station_info *sinfo)
+{
+    hdd_context_t *pHddCtx = wiphy_priv(wiphy);
+    if (idx != 0)
+        return -ENOENT;
+    vos_mem_copy(mac, pHddCtx->cfg_ini->intfMacAddr[0].bytes, VOS_MAC_ADDR_SIZE);
+    return __wlan_hdd_cfg80211_get_station(wiphy, dev, mac, sinfo);
+}
+
+
+/**
+ * wlan_hdd_cfg80211_dump_station() - dump station statistics
+ * @wiphy: Pointer to wiphy
+ * @dev: Pointer to network device
+ * @idx: variable to determine whether to get stats or not
+ * @mac: Pointer to mac
+ * @sinfo: Pointer to station info
+ *
+ * Return: 0 for success, non-zero for failure
+ */
+static int wlan_hdd_cfg80211_dump_station(struct wiphy *wiphy,
+                                struct net_device *dev,
+                                int idx, u8 *mac,
+                                struct station_info *sinfo)
+{
+	int ret;
+
+	vos_ssr_protect(__func__);
+	ret = __wlan_hdd_cfg80211_dump_station(wiphy, dev, idx, mac, sinfo);
+	vos_ssr_unprotect(__func__);
+	return ret;
+}
+
 /* cfg80211_ops */
 static struct cfg80211_ops wlan_hdd_cfg80211_ops =
 {
+    .dump_station = wlan_hdd_cfg80211_dump_station,
     .add_virtual_intf = wlan_hdd_add_virtual_intf,
     .del_virtual_intf = wlan_hdd_del_virtual_intf,
     .change_virtual_intf = wlan_hdd_cfg80211_change_iface,

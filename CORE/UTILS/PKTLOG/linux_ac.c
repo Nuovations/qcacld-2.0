@@ -756,8 +756,12 @@ static void pktlog_vclose(struct vm_area_struct *vma)
 	PKTLOG_MOD_DEC_USE_COUNT;
 }
 
+
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,25)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,1,0)
+vm_fault_t pktlog_fault(struct vm_fault *vmf)
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
 int pktlog_fault(struct vm_fault *vmf)
 #else
 int pktlog_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
