@@ -5,15 +5,22 @@ ANDROID_ROOT := $(PWD)
 DRIVER_SRC_BASE := $(LOCAL_PATH)
 LOCAL_PATH_BACKUP := $(ANDROID_ROOT)/$(LOCAL_PATH)
 
-ifeq ($(TARGET_ARCH),arm64)
-CROSS_COMPILE := $(ANDROID_ROOT)/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin/aarch64-linux-android-
+TARGET_KERNEL_ARCH := $(strip $(TARGET_KERNEL_ARCH))
+ifeq ($(TARGET_KERNEL_ARCH), arm)
+KERNEL_TOOLCHAIN_ABS := $(realpath prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/bin)
+KERNEL_CROSS_COMPILE := $(KERNEL_TOOLCHAIN_ABS)/arm-linux-androidkernel-
+else ifeq ($(TARGET_KERNEL_ARCH), arm64)
+KERNEL_TOOLCHAIN_ABS := $(realpath prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin)
+KERNEL_CROSS_COMPILE := $(KERNEL_TOOLCHAIN_ABS)/aarch64-linux-androidkernel-
 else
-CROSS_COMPILE := $(ANDROID_ROOT)/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/bin/arm-linux-androideabi-
+$(error kernel arch not supported at present)
 endif
 
+KERNEL_CROSS_COMPILE_WRAPPER := $(realpath $(CC_WRAPPER)) $(KERNEL_CROSS_COMPILE)
+
 # Generic flags
-MAKE_OPTIONS := ARCH=$(TARGET_ARCH)
-MAKE_OPTIONS += CROSS_COMPILE=$(CROSS_COMPILE)
+MAKE_OPTIONS := ARCH=$(TARGET_KERNEL_ARCH)
+MAKE_OPTIONS += CROSS_COMPILE="$(KERNEL_CROSS_COMPILE_WRAPPER)"
 MAKE_OPTIONS += WLAN_ROOT=$(LOCAL_PATH_BACKUP)
 MAKE_OPTIONS += MODNAME=wlan
 MAKE_OPTIONS += WLAN_OPEN_SOURCE=1
@@ -41,7 +48,7 @@ QCACLD_INTERMEDIATES := $(TARGET_OUT_INTERMEDIATES)/$(LOCAL_MODULE_CLASS)/$(LOCA
 # qca6574_wlan.ko in order to be more explicit.
 $(DRIVER_SRC_BASE)/wlan.ko: $(mod_cleanup) bootimage | $(ACP)
 	$(MAKE) -C $(KERNEL_SRC) M=$(LOCAL_PATH_BACKUP) $(MAKE_OPTIONS) modules
-	$(hide) $(CROSS_COMPILE)strip --strip-debug $(LOCAL_PATH_BACKUP)/wlan.ko
+	$(hide) $(KERNEL_CROSS_COMPILE_WRAPPER)strip --strip-debug $(LOCAL_PATH_BACKUP)/wlan.ko
 	$(hide) mkdir -p $(QCACLD_INTERMEDIATES)
 	$(hide) $(ACP) $(LOCAL_PATH_BACKUP)/wlan.ko $(QCACLD_INTERMEDIATES)/qca6574_wlan.ko
 
