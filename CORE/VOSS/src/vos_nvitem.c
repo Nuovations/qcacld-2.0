@@ -730,6 +730,20 @@ static int regd_init_wiphy(hdd_context_t *pHddCtx, struct regulatory *reg,
 	 */
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0)) || defined(WITH_BACKPORTS)
 	pHddCtx->reg.reg_flags = wiphy->regulatory_flags;
+	/*
+	 * "wiphy_apply_custom_regulatory" requires REGULATORY_CUSTOM_REG.
+	 *
+	 * Otherwise the function (in net/wireless/reg.c) warns with:
+	 *
+	 *     "wiphy should have REGULATORY_CUSTOM_REG"
+	 *
+	 * and then sets that flag unconditionally.
+	 *
+	 * Setting it here avoids the warning while it does not change the
+	 * driver's behavior at all, as the original flags are saved before
+	 * calling the function and restored to the original value just after.
+	 */
+	wiphy->regulatory_flags |= REGULATORY_CUSTOM_REG;
 #else
 	pHddCtx->reg.reg_flags = wiphy->flags;
 #endif
