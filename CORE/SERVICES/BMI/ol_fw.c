@@ -752,7 +752,7 @@ defined(CONFIG_NON_QC_PLATFORM_PCI)
        status = qca_request_firmware(&fw_entry, filename, scn->sc_osdev->device);
 	if (status)
 	{
-		pr_err("%s: Failed to get %s:%d\n", __func__, filename, status);
+		pr_debug("%s: Failed to get %s:%d\n", __func__, filename, status);
 
 		if (file == ATH_OTP_FILE)
 			return -ENOENT;
