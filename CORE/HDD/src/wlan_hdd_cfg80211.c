@@ -21564,7 +21564,11 @@ wlan_hdd_cfg80211_inform_bss_frame( hdd_adapter_t *pAdapter,
     hdd_context_t *pHddCtx;
     int status;
 #ifdef CONFIG_CNSS
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 20, 0)
+    struct timespec64 ts;
+#else
     struct timespec ts;
+#endif
 #endif
     hdd_config_t *cfg_param = NULL;
 
@@ -32373,7 +32377,12 @@ wlan_hdd_cfg80211_extscan_full_scan_result_event(void *ctx,
 {
 	hdd_context_t *pHddCtx  = (hdd_context_t *)ctx;
 	struct sk_buff *skb;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 18, 0)
+	struct timespec64 ts;
+#else
 	struct timespec ts;
+#endif
+
 	int flags = vos_get_gfp_flags();
 	struct hdd_ext_scan_context *context;
 

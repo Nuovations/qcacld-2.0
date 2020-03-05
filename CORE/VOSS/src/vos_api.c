@@ -2755,7 +2755,11 @@ out:
 v_U64_t vos_get_monotonic_boottime(void)
 {
 #ifdef CONFIG_CNSS
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 20, 0)
+   struct timespec64 ts;
+#else
    struct timespec ts;
+#endif
 
    vos_get_monotonic_boottime_ts(&ts);
    return (((v_U64_t)ts.tv_sec * 1000000) + (ts.tv_nsec / 1000));
@@ -3372,19 +3376,16 @@ v_U64_t vos_get_monotonic_boottime_ns(void)
 	return timespec_to_ns(&ts);
 }
 
-#if (LINUX_VERSION_CODE > KERNEL_VERSION(3, 10, 0))
 v_U64_t vos_get_bootbased_boottime_ns(void)
 {
-	return ktime_get_boot_ns();
-}
-
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 3, 0))
+  return ktime_get_boottime_ns();
+#elif (LINUX_VERSION_CODE > KERNEL_VERSION(3, 10, 0))
+  return ktime_get_boot_ns();
 #else
-v_U64_t vos_get_bootbased_boottime_ns(void)
-{
 	return ktime_to_ns(ktime_get_boottime());
-}
 #endif
-
+}
 /**
  * vos_do_div() - wrapper function for kernel macro(do_div).
  *
@@ -3719,4 +3720,3 @@ int qca_request_firmware(const struct firmware **firmware_p,
     return request_firmware(firmware_p, name,device);
 #endif
 }
-
