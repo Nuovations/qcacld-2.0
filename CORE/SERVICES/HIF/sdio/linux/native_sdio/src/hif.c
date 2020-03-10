@@ -2831,13 +2831,18 @@ static void hif_flush_async_task(HIF_DEVICE *device)
  */
 static int hif_reset_target(HIF_DEVICE *hif_device)
 {
-	int ret;
+	int ret = 0;
 
 	if (!hif_device || !hif_device->func|| !hif_device->func->card) {
 		AR_DEBUG_PRINTF(ATH_DEBUG_ERROR,
 			("AR6000: %s invalid HIF DEVICE \n", __func__));
 		return -ENODEV;
 	}
+#if LINUX_VERSION_CODE > KERNEL_VERSION(4,19,0)
+	AR_DEBUG_PRINTF(ATH_DEBUG_WARN,
+			("AR6000: %s mmc power save not available in this kernel version\n", __func__));
+	goto done;
+#else
 	/* Disable sdio func->pull down WLAN_EN-->pull down DAT_2 line */
 	ret = mmc_power_save_host(hif_device->func->card->host);
 	if(ret) {
@@ -2854,7 +2859,7 @@ static int hif_reset_target(HIF_DEVICE *hif_device)
 			("AR6000: %s Failed to restore mmc Power host %d\n",
 			__func__, ret));
 	}
-
+#endif
 done:
 	return ret;
 }
