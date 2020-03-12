@@ -22884,6 +22884,7 @@ int __wlan_hdd_cfg80211_scan( struct wiphy *wiphy,
     v_U8_t curr_session_id;
     scan_reject_states curr_reason;
     static uint32_t scan_ebusy_cnt;
+    char *chList = NULL;
 
     ENTER();
 
@@ -23145,8 +23146,17 @@ int __wlan_hdd_cfg80211_scan( struct wiphy *wiphy,
 
     if (request->n_channels)
     {
-       char chList [(request->n_channels*5)+1];
        int len;
+
+       chList = vos_mem_malloc((request->n_channels*5)+1);
+       if (NULL == chList)
+       {
+          hddLog(VOS_TRACE_LEVEL_ERROR,
+                 "chList memory alloc failed chList");
+          status = -ENOMEM;
+          goto free_mem;
+       }
+
        channelList = vos_mem_malloc(request->n_channels);
        if (NULL == channelList)
        {
@@ -23366,6 +23376,9 @@ free_mem:
     {
         vos_mem_free(scanRequest.SSIDs.SSIDList);
     }
+
+    if ( chList )
+      vos_mem_free( chList );
 
     if( channelList )
       vos_mem_free( channelList );
@@ -29039,6 +29052,8 @@ static int __wlan_hdd_cfg80211_sched_scan_start(struct wiphy *wiphy,
     hdd_config_t *config = NULL;
     v_U32_t num_ignore_dfs_ch = 0;
     hdd_station_ctx_t *station_ctx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
+    char *chList = NULL;
+    int len;
 
     ENTER();
     pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
@@ -29149,8 +29164,15 @@ static int __wlan_hdd_cfg80211_sched_scan_start(struct wiphy *wiphy,
     num_ch = 0;
     if (request->n_channels)
     {
-        char chList [(request->n_channels*5)+1];
-        int len;
+        chList = vos_mem_malloc((request->n_channels*5)+1);
+        if (NULL == chList)
+        {
+            hddLog(VOS_TRACE_LEVEL_ERROR,
+                  "chList memory alloc failed chList");
+            status = -ENOMEM;
+            goto error;
+        }
+
         for (i = 0, len = 0; i < request->n_channels; i++)
         {
             for (indx = 0; indx < num_channels_allowed; indx++)
@@ -29305,6 +29327,8 @@ static int __wlan_hdd_cfg80211_sched_scan_start(struct wiphy *wiphy,
 
 error:
     vos_mem_free(pPnoRequest);
+    if (chList)
+      vos_mem_free(chList);
     EXIT();
     return ret;
 }
