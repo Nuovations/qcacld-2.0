@@ -469,7 +469,7 @@ typedef struct ieee80211_cb wbuf_context;
 
 #ifdef ANDROID
 #ifndef err
-#include <errno.h>
+#include <linux/errno.h>
 #define err(_s, args...) do { \
     fprintf(stderr, "%s: line %d ", __FILE__, __LINE__); \
     fprintf(stderr, args); fprintf(stderr, ": %d\n", errno); \

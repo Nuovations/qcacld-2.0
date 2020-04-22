@@ -42,8 +42,8 @@
 #ifdef WDI_API_AS_FUNCS
 
 #include <adf_os_types.h> /* u_int32_t */
-#include <ieee80211.h>    /* ieee80211_qosframe_htc_addr4 */
 #include <enet.h>         /* LLC_SNAP_HDR_LEN */
+#include <linux/ieee80211.h>    /* ieee80211_qosframe_htc_addr4 */
 
 #if defined(CONFIG_HL_SUPPORT)
 #include "wlan_tgt_def_config_hl.h"
