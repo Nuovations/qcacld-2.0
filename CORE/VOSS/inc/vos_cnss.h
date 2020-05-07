@@ -116,7 +116,7 @@ static inline void vos_pm_wake_lock_release(struct wakeup_source *ws)
 static inline void vos_pm_wake_lock_destroy(struct wakeup_source *ws)
 {
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
-	wakeup_source_destroy(ws);
+	wakeup_source_remove(ws);
 #else
 	wakeup_source_trash(ws);
 #endif
