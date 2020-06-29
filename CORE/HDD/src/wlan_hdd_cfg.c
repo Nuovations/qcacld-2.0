@@ -6659,7 +6659,7 @@ static int get_macs_from_dt(hdd_context_t *pHddCtx)
 
       sprintf(fName, WLAN_MAC_DT_FILE "%d", i);
 
-      status = request_firmware(&fw, fName, pHddCtx->parent_dev);
+      status = qca_request_firmware(&fw, fName, pHddCtx->parent_dev);
       if (!status && fw && fw->data && fw->size)
       {
          /* Successfully read mac from device tree */
