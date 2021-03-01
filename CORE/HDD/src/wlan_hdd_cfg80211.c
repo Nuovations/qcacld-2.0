@@ -320,6 +320,29 @@ const static struct ieee80211_channel hdd_channels_5_GHZ[] =
     HDD5GHZCHAN(5825,165, 0) ,
 };
 
+const static struct ieee80211_channel hdd_channels_5_GHZ_without_UNII[] =
+{
+    HDD5GHZCHAN(5180, 36, 0) ,
+    HDD5GHZCHAN(5200, 40, 0) ,
+    HDD5GHZCHAN(5220, 44, 0) ,
+    HDD5GHZCHAN(5240, 48, 0) ,
+    HDD5GHZCHAN(5260, 52, 0) ,
+    HDD5GHZCHAN(5280, 56, 0) ,
+    HDD5GHZCHAN(5300, 60, 0) ,
+    HDD5GHZCHAN(5320, 64, 0) ,
+    HDD5GHZCHAN(5500,100, 0) ,
+    HDD5GHZCHAN(5520,104, 0) ,
+    HDD5GHZCHAN(5540,108, 0) ,
+    HDD5GHZCHAN(5560,112, 0) ,
+    HDD5GHZCHAN(5580,116, 0) ,
+    HDD5GHZCHAN(5600,120, 0) ,
+    HDD5GHZCHAN(5620,124, 0) ,
+    HDD5GHZCHAN(5640,128, 0) ,
+    HDD5GHZCHAN(5660,132, 0) ,
+    HDD5GHZCHAN(5680,136, 0) ,
+    HDD5GHZCHAN(5700,140, 0) ,
+};
+
 static const struct ieee80211_channel hdd_etsi_srd_chan[] = {
 	HDD5GHZCHAN(5845, 169, 0),
 	HDD5GHZCHAN(5865, 173, 0),
@@ -988,6 +1011,8 @@ static const struct wiphy_wowlan_support wowlan_support_cfg80211_init = {
     .pattern_max_len = WOWL_PTRN_MAX_SIZE,
 };
 #endif
+
+static int disable_unii3 = 0;
 
 #if defined(FEATURE_WLAN_CH_AVOID) || defined(FEATURE_WLAN_FORCE_SAP_SCC)
 /*
@@ -16465,8 +16490,7 @@ hdd_wiphy_set_max_sched_scans(struct wiphy *wiphy, uint8_t max_scans)
 }
 #endif /* KERNEL_VERSION(4, 12, 0) */
 
-#if defined(WLAN_FEATURE_SAE) && \
-	defined(CFG80211_EXTERNAL_AUTH_SUPPORT)
+#if defined(WLAN_FEATURE_SAE)
 /**
  * wlan_hdd_cfg80211_set_wiphy_sae_feature() - Indicates support of SAE feature
  * @wiphy: Pointer to wiphy
@@ -16517,10 +16541,15 @@ int wlan_hdd_cfg80211_init(struct device *dev,
                                )
 {
     int i, j;
+    int channel_size = sizeof(hdd_channels_5_GHZ);
     hdd_context_t *pHddCtx = wiphy_priv(wiphy);
 
     ENTER();
 
+    if(disable_unii3) {
+      channel_size = sizeof(hdd_channels_5_GHZ_without_UNII);
+      wlan_hdd_band_5_GHZ.n_channels = ARRAY_SIZE(hdd_channels_5_GHZ_without_UNII);
+    }
     /* Now bind the underlying wlan device with wiphy */
     set_wiphy_dev(wiphy, dev);
 
@@ -16684,7 +16713,7 @@ int wlan_hdd_cfg80211_init(struct device *dev,
 
         if (pCfg->dot11p_mode) {
             wiphy->bands[IEEE80211_BAND_5GHZ]->channels =
-                vos_mem_malloc(sizeof(hdd_channels_5_GHZ) +
+                vos_mem_malloc(channel_size +
                                 sizeof(hdd_channels_dot11p));
             if (wiphy->bands[IEEE80211_BAND_5GHZ]->channels == NULL) {
                 hddLog(VOS_TRACE_LEVEL_ERROR,
@@ -16694,21 +16723,21 @@ int wlan_hdd_cfg80211_init(struct device *dev,
                 return -ENOMEM;
             }
             wiphy->bands[IEEE80211_BAND_5GHZ]->n_channels =
-                ARRAY_SIZE(hdd_channels_5_GHZ) +
+                  wlan_hdd_band_5_GHZ.n_channels +
                 ARRAY_SIZE(hdd_channels_dot11p);
 
             vos_mem_copy(wiphy->bands[IEEE80211_BAND_5GHZ]->channels,
                             &hdd_channels_5_GHZ[0],
-                            sizeof(hdd_channels_5_GHZ));
+                            channel_size);
 
             vos_mem_copy((char *)wiphy->bands[IEEE80211_BAND_5GHZ]->channels
-                            + sizeof(hdd_channels_5_GHZ),
+                            + channel_size,
                             &hdd_channels_dot11p[0],
                             sizeof(hdd_channels_dot11p));
         } else {
 
             wiphy->bands[IEEE80211_BAND_5GHZ]->channels =
-                 vos_mem_malloc(sizeof(hdd_channels_5_GHZ) +
+                 vos_mem_malloc(channel_size +
                                 sizeof(hdd_etsi_srd_chan));
             if (wiphy->bands[IEEE80211_BAND_5GHZ]->channels == NULL) {
                 hddLog(VOS_TRACE_LEVEL_ERROR,
@@ -16718,15 +16747,15 @@ int wlan_hdd_cfg80211_init(struct device *dev,
                 return -ENOMEM;
             }
             wiphy->bands[IEEE80211_BAND_5GHZ]->n_channels =
-                ARRAY_SIZE(hdd_channels_5_GHZ) +
+                  wlan_hdd_band_5_GHZ.n_channels +
                 ARRAY_SIZE(hdd_etsi_srd_chan);
 
             vos_mem_copy(wiphy->bands[IEEE80211_BAND_5GHZ]->channels,
                             &hdd_channels_5_GHZ[0],
-                            sizeof(hdd_channels_5_GHZ));
+                            channel_size);
 
             vos_mem_copy((char *)wiphy->bands[IEEE80211_BAND_5GHZ]->channels
-                            + sizeof(hdd_channels_5_GHZ),
+                            + channel_size,
                             &hdd_etsi_srd_chan[0],
                             sizeof(hdd_etsi_srd_chan));
         }
@@ -28732,8 +28761,7 @@ static int wlan_hdd_cfg80211_flush_pmksa(struct wiphy *wiphy,
 }
 #endif
 
-#if defined(WLAN_FEATURE_SAE) && \
-	defined(CFG80211_EXTERNAL_AUTH_SUPPORT)
+#if defined(WLAN_FEATURE_SAE)
 /**
  * __wlan_hdd_cfg80211_external_auth() - Handle external auth
  * @wiphy: Pointer to wireless phy
@@ -31123,6 +31151,9 @@ void wlan_hdd_init_chan_info(hdd_context_t *hdd_ctx)
 {
 	uint8_t num_2g, num_5g, index = 0;
 
+	if(disable_unii3)
+		wlan_hdd_band_5_GHZ.n_channels = ARRAY_SIZE(hdd_channels_5_GHZ_without_UNII);
+
 	if (!hdd_ctx->cfg_ini->fEnableSNRMonitoring)
 		return;
 
@@ -31142,7 +31173,7 @@ void wlan_hdd_init_chan_info(hdd_context_t *hdd_ctx)
 				hdd_channels_2_4_GHZ[index].center_freq;
 		}
 
-		num_5g = ARRAY_SIZE(hdd_channels_5_GHZ);
+		num_5g = wlan_hdd_band_5_GHZ.n_channels;
 		for (; (index - num_2g) < num_5g; index++) {
 			if (vos_is_dsrc_channel(
 				hdd_channels_5_GHZ[index - num_2g].center_freq))
@@ -33434,8 +33465,9 @@ static struct cfg80211_ops wlan_hdd_cfg80211_ops =
     defined(CFG80211_ABORT_SCAN)
      .abort_scan = wlan_hdd_cfg80211_abort_scan,
 #endif
-#if defined(WLAN_FEATURE_SAE) && \
-    defined(CFG80211_EXTERNAL_AUTH_SUPPORT)
+#if defined(WLAN_FEATURE_SAE)
     .external_auth = wlan_hdd_cfg80211_external_auth,
 #endif
 };
+module_param(disable_unii3, int,
+             S_IRUSR | S_IRGRP | S_IROTH);

@@ -5613,7 +5613,7 @@ FG_BTC_BT_INTERVAL_PAGE_P2P_STA_DEFAULT
  * sae_enabled - Enable/Disable SAE support in driver
  * @Min: 0
  * @Max: 1
- * @Default: 0
+ * @Default: 1
  *
  * This ini is used to enable/disable SAE support in driver
  * Driver will update config to supplicant based on this config.
@@ -5627,7 +5627,7 @@ FG_BTC_BT_INTERVAL_PAGE_P2P_STA_DEFAULT
  */
 
 #define CFG_IS_SAE_ENABLED_NAME    "sae_enabled"
-#define CFG_IS_SAE_ENABLED_DEFAULT (0)
+#define CFG_IS_SAE_ENABLED_DEFAULT (1)
 #define CFG_IS_SAE_ENABLED_MIN     (0)
 #define CFG_IS_SAE_ENABLED_MAX     (1)
 
