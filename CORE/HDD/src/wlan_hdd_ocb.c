@@ -271,6 +271,7 @@ static int dot11p_validate_channel(struct wiphy *wiphy,
 
 				switch (bandwidth) {
 				case 0:
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,16,0))
 					if (current_channel->flags &
 					    IEEE80211_CHAN_NO_10MHZ)
 						bandwidth = 5;
@@ -278,19 +279,24 @@ static int dot11p_validate_channel(struct wiphy *wiphy,
 						 IEEE80211_CHAN_NO_20MHZ)
 						bandwidth = 10;
 					else
+#endif
 						bandwidth = 20;
 					break;
 				case 5:
 					break;
 				case 10:
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,16,0))
 					if (current_channel->flags &
 					    IEEE80211_CHAN_NO_10MHZ)
 						return -EINVAL;
+#endif
 					break;
 				case 20:
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,16,0))
 					if (current_channel->flags &
 					    IEEE80211_CHAN_NO_20MHZ)
 						return -EINVAL;
+#endif
 					break;
 				default:
 					return -EINVAL;
