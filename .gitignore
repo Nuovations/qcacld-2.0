@@ -7,3 +7,4 @@ modules.order
 *.mod.c
 cscope.*
 wlan.ko
+wlan.mod
