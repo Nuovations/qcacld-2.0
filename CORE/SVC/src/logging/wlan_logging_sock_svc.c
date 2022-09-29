@@ -323,7 +323,11 @@ int wlan_log_to_user(VOS_TRACE_LEVEL log_level, char *to_be_sent, int length)
 		/* Convert rtc to local time */
 		local_time = (u32)(tv.tv_sec - (sys_tz.tz_minuteswest * 60));
 #endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 5, 0)
+		rtc_time64_to_tm(local_time, &tm);
+#else
 		rtc_time_to_tm(local_time, &tm);
+#endif
 		tlen = snprintf(tbuf, sizeof(tbuf),
 				"R%d: [%s][%02d:%02d:%02d.%06lu] ",
 				radio, current->comm, tm.tm_hour,

@@ -903,7 +903,11 @@ unsigned long vos_get_time_of_the_day_ms(void)
 	local_time = (uint32_t)(tv.tv_sec -
     (sys_tz.tz_minuteswest * 60));
 #endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 5, 0)
+	rtc_time64_to_tm(local_time, &tm);
+#else
 	rtc_time_to_tm(local_time, &tm);
+#endif
 	return ((tm.tm_hour * 60 * 60 * 1000) +
 		(tm.tm_min *60 * 1000) + (tm.tm_sec * 1000)+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 20, 0)
@@ -932,7 +936,12 @@ void vos_get_time_of_the_day_in_hr_min_sec_usec(char *tbuf, int len)
        do_gettimeofday(&tv);
        local_time = (u32)(tv.tv_sec - (sys_tz.tz_minuteswest * 60));
 #endif
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 5, 0)
+       rtc_time64_to_tm(local_time, &tm);
+#else
        rtc_time_to_tm(local_time, &tm);
+#endif
        snprintf(tbuf, len,
                "[%02d:%02d:%02d.%06lu] ",
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 20, 0)

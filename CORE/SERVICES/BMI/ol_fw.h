@@ -32,6 +32,10 @@
 #include "vos_types.h"
 #endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 15, 0)
+#define PM_QOS_CPU_DMA_LATENCY	1
+#endif
+
 #define AR6004_VERSION_REV1_3        0x31c8088a
 
 #define AR9888_REV1_VERSION          0x4000002c

@@ -29,6 +29,9 @@
 #ifndef _ADF_CMN_OS_DMA_PVT_H
 #define _ADF_CMN_OS_DMA_PVT_H
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0)
+#define DMA_ATTR_NON_CONSISTENT 1 << 3
+#endif
 #include <adf_os_types.h>
 #include <adf_os_mem.h>
 #include <linux/types.h>

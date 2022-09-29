@@ -141,9 +141,15 @@ static inline void vos_get_monotonic_bootime_ts(struct timespec *ts)
 }
 #endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 5, 0)
+static inline void vos_get_boottime_ts(struct timespec64 *ts)
+{
+	ktime_get_ts64(ts);
+#else
 static inline void vos_get_boottime_ts(struct timespec *ts)
 {
 	ktime_get_ts(ts);
+#endif
 }
 
 static inline void *vos_get_virt_ramdump_mem(struct device *dev,
@@ -367,11 +373,6 @@ static inline void *vos_get_virt_ramdump_mem(struct device *dev,
 static inline int vos_wlan_get_dfs_nol(void *info, u16 info_len)
 {
 	return cnss_wlan_get_dfs_nol(info, info_len);
-}
-
-static inline void vos_get_boottime_ts(struct timespec *ts)
-{
-        cnss_get_boottime(ts);
 }
 
 static inline void vos_set_cc_source(enum cnss_cc_src cc_source)

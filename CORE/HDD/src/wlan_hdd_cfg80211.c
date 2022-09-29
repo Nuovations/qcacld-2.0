@@ -5229,7 +5229,11 @@ static int hdd_extscan_passpoint_fill_network_list(
 			hddLog(LOGE, FL("attr realm failed"));
 			return -EINVAL;
 		}
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0)
+		len = nla_strscpy(req_msg->networks[index].realm,
+#else
 		len = nla_strlcpy(req_msg->networks[index].realm,
+#endif
 				  network[PARAM_REALM],
 				  SIR_PASSPOINT_REALM_LEN);
 		/* Don't send partial realm to firmware */
@@ -17572,7 +17576,11 @@ int wlan_hdd_cfg80211_update_apies(hdd_adapter_t* pHostapdAdapter)
                           WLAN_EID_INTERWORKING);
 
     wlan_hdd_add_extra_ie(pHostapdAdapter, genie, &total_ielen,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 15, 0)
+                          WLAN_EID_TX_POWER_ENVELOPE);
+#else
                           WLAN_EID_VHT_TX_POWER_ENVELOPE);
+#endif
 
     if(test_bit(SOFTAP_BSS_STARTED, &pHostapdAdapter->event_flags))
         wlan_hdd_add_extra_ie(pHostapdAdapter, genie, &total_ielen,

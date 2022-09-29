@@ -62,7 +62,9 @@
 
 #include <linux/err.h>
 #include <linux/random.h>
-#if(LINUX_VERSION_CODE >= KERNEL_VERSION(4,8,0))
+#if(LINUX_VERSION_CODE >= KERNEL_VERSION(5,12,0))
+#include <crypto/internal/cipher.h>
+#elif(LINUX_VERSION_CODE >= KERNEL_VERSION(4,8,0))
 #include <crypto/skcipher.h>
 #else
 #include <linux/crypto.h>
@@ -1094,3 +1096,6 @@ int vos_status_to_os_return(VOS_STATUS status)
 		return -EPERM;
 	}
 }
+#if(LINUX_VERSION_CODE >= KERNEL_VERSION(5,12,0))
+MODULE_IMPORT_NS(CRYPTO_INTERNAL);
+#endif
