@@ -1,6 +1,6 @@
 KERNEL_SRC ?= /lib/modules/$(shell uname -r)/build
 
-WLAN_ROOT ?= $(PWD)
+WLAN_ROOT ?= $(CURDIR)
 
 KBUILD_OPTIONS := WLAN_ROOT=$(WLAN_ROOT)
 KBUILD_OPTIONS += MODNAME?=wlan
